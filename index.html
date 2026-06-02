@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>総合チャット＆通話アプリ（名前変更機能付き）</title>
+  <title>総合チャット＆通話アプリ（お天気機能付き）</title>
   <style>
     /* ＝＝＝ 全体の基本設定 ＝＝＝ */
     body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
@@ -11,6 +11,10 @@
     .screen { display: none; flex-direction: column; height: 100%; }
     .screen.active { display: flex; }
     .header { background-color: #075e54; color: white; padding: 20px; text-align: center; font-size: 18px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+
+    /* ＝＝＝ 天気ウィジェット ＝＝＝ */
+    .weather-widget { font-size: 14px; font-weight: normal; background: rgba(0,0,0,0.2); padding: 5px 10px; border-radius: 15px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+    .weather-widget:hover { background: rgba(0,0,0,0.3); }
 
     /* ＝＝＝ 各画面のレイアウト ＝＝＝ */
     .content-area { padding: 30px 20px; display: flex; flex-direction: column; align-items: center; gap: 15px; overflow-y: auto; }
@@ -29,7 +33,6 @@
     .profile-id { font-size: 14px; color: #666; }
     .warning-text { color: #d32f2f; font-size: 12px; font-weight: bold; margin-top: -5px; margin-bottom: 15px; }
     
-    /* 名前変更ボタン */
     .edit-name-btn { background-color: #34495e; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; }
     .edit-name-btn:hover { background-color: #2c3e50; }
 
@@ -86,7 +89,10 @@
     <div id="notification" class="notification"></div>
 
     <div id="loginScreen" class="screen active">
-      <div class="header"><span></span><span>🔑 初期設定</span><span></span></div>
+      <div class="header">
+        <div id="weatherLogin" class="weather-widget" title="クリックで更新">☁️ --℃</div>
+        <span>🔑 初期設定</span>
+        <div style="width: 70px;"></div> </div>
       <div class="content-area" style="justify-content: center; height: 100%;">
         <div class="section-box">
           <h2>アプリへようこそ</h2>
@@ -101,7 +107,11 @@
     </div>
 
     <div id="homeScreen" class="screen">
-      <div class="header"><span></span><span>🏠 ホーム</span><span></span></div>
+      <div class="header">
+        <div id="weatherHome" class="weather-widget" title="クリックで更新">☁️ --℃</div>
+        <span>🏠 ホーム</span>
+        <div style="width: 70px;"></div>
+      </div>
       <div class="content-area">
         <div class="my-profile-display">
           <div class="profile-name">
@@ -156,6 +166,43 @@
   </div>
 
   <script>
+    // ＝＝＝ 天気取得機能（Open-Meteo APIを使用） ＝＝＝
+    async function fetchWeather() {
+      const weatherLogin = document.getElementById('weatherLogin');
+      const weatherHome = document.getElementById('weatherHome');
+      
+      try {
+        // APIからデータを取得
+        const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=35.6983&longitude=139.9822&current_weather=true');
+        const data = await res.json();
+        const temp = data.current_weather.temperature;
+        const code = data.current_weather.weathercode;
+
+        // 天気コードをアイコンに変換
+        let icon = '☁️'; 
+        if (code === 0) icon = '☀️'; // 晴れ
+        else if (code >= 1 && code <= 3) icon = '⛅'; // くもり
+        else if (code >= 51 && code <= 67) icon = '🌧️'; // 雨
+        else if (code >= 71 && code <= 77) icon = '❄️'; // 雪
+        else if (code >= 95) icon = '⚡'; // 雷雨
+
+        const weatherText = `${icon} ${temp}℃`;
+        weatherLogin.textContent = weatherText;
+        weatherHome.textContent = weatherText;
+      } catch (err) {
+        weatherLogin.textContent = '☁️ --℃';
+        weatherHome.textContent = '☁️ --℃';
+      }
+    }
+
+    // 起動時に天気を取得
+    fetchWeather();
+    
+    // 天気ウィジェットをクリックしたときにも更新する
+    document.getElementById('weatherLogin').addEventListener('click', fetchWeather);
+    document.getElementById('weatherHome').addEventListener('click', fetchWeather);
+
+
     // ＝＝＝ HTML要素の取得 ＝＝＝
     const appContainer = document.getElementById('appContainer');
     const loginScreen = document.getElementById('loginScreen');
@@ -175,7 +222,7 @@
     
     const displayMyName = document.getElementById('displayMyName');
     const displayMyId = document.getElementById('displayMyId');
-    const editNameBtn = document.getElementById('editNameBtn'); // ★追加
+    const editNameBtn = document.getElementById('editNameBtn');
     
     const globalChatBtn = document.getElementById('globalChatBtn');
     const friendIdInput = document.getElementById('friendIdInput');
@@ -238,12 +285,9 @@
       homeScreen.classList.add('active');
     });
 
-    // ＝＝＝ ★追加：名前の変更処理 ＝＝＝
+    // ＝＝＝ 3. 名前の変更処理 ＝＝＝
     editNameBtn.addEventListener('click', () => {
-      // ポップアップで新しい名前を入力させる
       const newName = prompt('新しい表示名を入力してください', myName);
-      
-      // キャンセルされず、空っぽでもない場合に変更を保存
       if (newName !== null && newName.trim() !== '') {
         myName = newName.trim();
         localStorage.setItem('chatApp_MyName', myName);
@@ -252,7 +296,7 @@
       }
     });
 
-    // ＝＝＝ 3. 全体チャットへの参加 ＝＝＝
+    // ＝＝＝ 4. 全体チャットへの参加 ＝＝＝
     globalChatBtn.addEventListener('click', () => {
       chatMode = 'global';
       homeScreen.classList.remove('active'); 
@@ -262,7 +306,7 @@
       addMessage('【システム】全体チャットルームに入室しました！', false, 'システム');
     });
 
-    // ＝＝＝ 4. 友達追加と通知 ＝＝＝
+    // ＝＝＝ 5. 友達追加と通知 ＝＝＝
     addFriendBtn.addEventListener('click', () => {
       const id = friendIdInput.value.trim();
       if (id === '') { alert('相手のIDを入力してください！'); return; }
@@ -285,7 +329,6 @@
       chatTitle.textContent = `👤 ${currentFriendId}`; 
       msgArea.innerHTML = '';
       
-      // 自動ボット（最初の挨拶だけしてくれます。変更後の自分の名前で呼んでくれます）
       addMessage(`こんにちは、${myName}さん！通話ボタンを押すと電話がかかってくるシミュレーションができますよ。`, false, currentFriendId);
     });
 
@@ -294,7 +337,7 @@
       homeScreen.classList.add('active');
     });
 
-    // ＝＝＝ 5. メッセージ表示機能（タップメニュー連携） ＝＝＝
+    // ＝＝＝ 6. メッセージ表示機能（タップメニュー連携） ＝＝＝
     function addMessage(text, isMine, senderName = '') {
       const wrapper = document.createElement('div');
       wrapper.classList.add('msg-wrapper');
@@ -333,7 +376,7 @@
       msgArea.scrollTop = msgArea.scrollHeight;
     }
 
-    // ＝＝＝ 6. メッセージ送信処理 ＝＝＝
+    // ＝＝＝ 7. メッセージ送信処理 ＝＝＝
     function handleSend() {
       const text = chatTextInput.value.trim();
       if (text === '') return;
@@ -341,7 +384,6 @@
       addMessage(text, true); 
       chatTextInput.value = '';
       
-      // 1対1の時のみ、簡単なオウム返しボットを動かしておく（チャットしてる感を出すため）
       if(chatMode === 'private') {
           setTimeout(() => {
               addMessage(`「${text}」ですね。`, false, currentFriendId);
@@ -352,7 +394,7 @@
     sendBtn.addEventListener('click', handleSend);
     chatTextInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(); });
 
-    // ＝＝＝ 7. タップメニューの動作 ＝＝＝
+    // ＝＝＝ 8. タップメニューの動作 ＝＝＝
     document.addEventListener('click', () => { contextMenu.style.display = 'none'; });
 
     menuAddFriend.addEventListener('click', (e) => {
@@ -380,7 +422,7 @@
       window.open(`https://www.google.com/search?q=${encodeURIComponent(selectedText)}`, '_blank');
     });
 
-    // ＝＝＝ 8. 通話機能（シミュレーション） ＝＝＝
+    // ＝＝＝ 9. 通話機能（シミュレーション） ＝＝＝
     function formatTime(seconds) {
       const m = Math.floor(seconds / 60).toString().padStart(2, '0');
       const s = (seconds % 60).toString().padStart(2, '0');
@@ -397,7 +439,6 @@
       callingScreen.classList.add('active');
       callingNameDisplay.textContent = currentFriendId;
 
-      // 3秒後に相手が電話に出る
       callTimeout = setTimeout(() => {
         callingScreen.classList.remove('active');
         inCallScreen.classList.add('active');
