@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>総合チャット＆通話アプリ（シミュレーション版）</title>
+  <title>総合チャット＆通話アプリ（名前変更機能付き）</title>
   <style>
     /* ＝＝＝ 全体の基本設定 ＝＝＝ */
     body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
@@ -23,10 +23,15 @@
     .global-btn { background-color: #e67e22; }
     .global-btn:hover { background-color: #d35400; }
 
-    .my-profile-display { background-color: #e5ddd5; padding: 15px 40px; border-radius: 20px; text-align: center; border: 2px solid #075e54; display: inline-block; margin-bottom: 10px; }
-    .profile-name { font-size: 22px; font-weight: bold; color: #333; margin-bottom: 5px; }
+    /* プロフィール表示エリア */
+    .my-profile-display { background-color: #e5ddd5; padding: 15px 40px; border-radius: 20px; text-align: center; border: 2px solid #075e54; display: inline-block; margin-bottom: 10px; position: relative; }
+    .profile-name { font-size: 22px; font-weight: bold; color: #333; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 10px; }
     .profile-id { font-size: 14px; color: #666; }
     .warning-text { color: #d32f2f; font-size: 12px; font-weight: bold; margin-top: -5px; margin-bottom: 15px; }
+    
+    /* 名前変更ボタン */
+    .edit-name-btn { background-color: #34495e; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; }
+    .edit-name-btn:hover { background-color: #2c3e50; }
 
     /* ＝＝＝ 通知とチャット画面 ＝＝＝ */
     .notification { position: absolute; top: -100px; left: 50%; transform: translateX(-50%); background-color: #25D366; color: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); width: 70%; text-align: center; font-size: 16px; font-weight: bold; cursor: pointer; transition: top 0.4s ease-in-out; z-index: 10; }
@@ -85,7 +90,7 @@
       <div class="content-area" style="justify-content: center; height: 100%;">
         <div class="section-box">
           <h2>アプリへようこそ</h2>
-          <p class="warning-text">※一度登録するとブラウザに記憶されます</p>
+          <p class="warning-text">※一度登録するとブラウザに記憶されます<br>（IDは後から変更できません）</p>
           <div class="input-label">表示名（チャットで表示される名前）</div>
           <input type="text" id="myNameInput" class="text-input" placeholder="例: 太郎">
           <div class="input-label">ユーザーID（友達追加用）</div>
@@ -99,7 +104,10 @@
       <div class="header"><span></span><span>🏠 ホーム</span><span></span></div>
       <div class="content-area">
         <div class="my-profile-display">
-          <div class="profile-name" id="displayMyName"></div>
+          <div class="profile-name">
+            <span id="displayMyName"></span>
+            <button id="editNameBtn" class="edit-name-btn">✎ 変更</button>
+          </div>
           <div class="profile-id">ID: <span id="displayMyId"></span></div>
         </div>
         
@@ -164,8 +172,10 @@
     const myNameInput = document.getElementById('myNameInput');
     const myIdInput = document.getElementById('myIdInput');
     const loginBtn = document.getElementById('loginBtn');
+    
     const displayMyName = document.getElementById('displayMyName');
     const displayMyId = document.getElementById('displayMyId');
+    const editNameBtn = document.getElementById('editNameBtn'); // ★追加
     
     const globalChatBtn = document.getElementById('globalChatBtn');
     const friendIdInput = document.getElementById('friendIdInput');
@@ -228,6 +238,20 @@
       homeScreen.classList.add('active');
     });
 
+    // ＝＝＝ ★追加：名前の変更処理 ＝＝＝
+    editNameBtn.addEventListener('click', () => {
+      // ポップアップで新しい名前を入力させる
+      const newName = prompt('新しい表示名を入力してください', myName);
+      
+      // キャンセルされず、空っぽでもない場合に変更を保存
+      if (newName !== null && newName.trim() !== '') {
+        myName = newName.trim();
+        localStorage.setItem('chatApp_MyName', myName);
+        displayMyName.textContent = myName;
+        alert('名前を変更しました！');
+      }
+    });
+
     // ＝＝＝ 3. 全体チャットへの参加 ＝＝＝
     globalChatBtn.addEventListener('click', () => {
       chatMode = 'global';
@@ -261,7 +285,7 @@
       chatTitle.textContent = `👤 ${currentFriendId}`; 
       msgArea.innerHTML = '';
       
-      // 自動ボット（最初の挨拶だけしてくれます）
+      // 自動ボット（最初の挨拶だけしてくれます。変更後の自分の名前で呼んでくれます）
       addMessage(`こんにちは、${myName}さん！通話ボタンを押すと電話がかかってくるシミュレーションができますよ。`, false, currentFriendId);
     });
 
