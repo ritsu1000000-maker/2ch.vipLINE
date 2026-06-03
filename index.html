@@ -41,6 +41,9 @@
     .chat-icon { width: 45px; height: 45px; border-radius: 50%; background-color: #bdc3c7; background-size: cover; background-position: center; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 2px solid #fff; }
     .profile-icon-large { width: 80px; height: 80px; font-size: 40px; margin: 0 auto 10px auto; }
 
+    /* ★追加: カメラアイコン装飾 */
+    .camera-badge { position: absolute; bottom: 10px; right: 0; background: #34495e; color: white; border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); pointer-events: none; border: 2px solid #fff; }
+
     /* ＝＝＝ 通知とチャット画面 ＝＝＝ */
     .notification { position: absolute; top: -100px; left: 50%; transform: translateX(-50%); background-color: #25D366; color: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); width: 70%; text-align: center; font-size: 16px; font-weight: bold; cursor: pointer; transition: top 0.4s ease-in-out; z-index: 10; }
     .notification.show { top: 20px; }
@@ -139,9 +142,14 @@
       </div>
       <div class="content-area">
         <div class="my-profile-display">
-          <div id="homeMyIcon" class="chat-icon profile-icon-large">👤</div>
           
-          <div class="profile-name">
+          <div style="position: relative; display: inline-block; cursor: pointer;" title="タップしてアイコンを変更" id="homeIconChangeBtn">
+            <div id="homeMyIcon" class="chat-icon profile-icon-large" style="margin-bottom: 0;">👤</div>
+            <div class="camera-badge">📷</div>
+          </div>
+          <input type="file" id="homeIconUploadHidden" accept="image/*" style="display: none;">
+          
+          <div class="profile-name" style="margin-top: 10px;">
             <span id="displayMyName"></span>
             <button id="editNameBtn" class="edit-name-btn">✎ 変更</button>
           </div>
@@ -264,32 +272,29 @@
       notificationSound.currentTime = 0; notificationSound.play().catch(e=>alert('再生できません'));
     });
 
-    // ★追加: アイコン画像のアップロードとリサイズ処理（容量制限対策）
-    document.getElementById('myIconUpload').addEventListener('change', function(e) {
-      const file = e.target.files[0];
+    // ＝＝＝ アイコン画像をリサイズして保存する共通関数 ＝＝＝
+    function handleIconUpload(file, callback) {
       if (!file) return;
       const reader = new FileReader();
       reader.onload = function(event) {
         const img = new Image();
         img.onload = function() {
           const canvas = document.createElement('canvas');
-          const size = 120; // 120x120ピクセルに縮小して保存
+          const size = 120; // 120x120ピクセルに縮小して保存（重くならないように）
           canvas.width = size; canvas.height = size;
           const ctx = canvas.getContext('2d');
           
-          // 中央を正方形に切り抜く
           let min = Math.min(img.width, img.height);
           let sx = (img.width - min) / 2; let sy = (img.height - min) / 2;
           ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
           
-          myIconData = canvas.toDataURL('image/jpeg', 0.8);
-          document.getElementById('iconPreview').style.backgroundImage = `url(${myIconData})`;
-          document.getElementById('iconPreview').textContent = '';
+          const base64Data = canvas.toDataURL('image/jpeg', 0.8);
+          callback(base64Data);
         };
         img.src = event.target.result;
       };
       reader.readAsDataURL(file);
-    });
+    }
 
     // アイコンを画面にセットする便利関数
     function setIconDisplay(element, iconValue) {
@@ -302,9 +307,37 @@
       }
     }
 
+    // 初期設定画面でのアイコンアップロード
+    document.getElementById('myIconUpload').addEventListener('change', function(e) {
+      handleIconUpload(e.target.files[0], (data) => {
+        myIconData = data;
+        setIconDisplay(document.getElementById('iconPreview'), myIconData);
+      });
+    });
+
+    // ★追加: ホーム画面でのアイコン変更機能
+    document.getElementById('homeIconChangeBtn').addEventListener('click', () => {
+      document.getElementById('homeIconUploadHidden').click();
+    });
+    document.getElementById('homeIconUploadHidden').addEventListener('change', function(e) {
+      handleIconUpload(e.target.files[0], (data) => {
+        myIconData = data;
+        localStorage.setItem('chatApp_MyIcon', myIconData);
+        setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
+        
+        // 全体ユーザーリスト上の自分のデータも更新する
+        let allUsers = getSafeData('chatApp_Users_v2', []);
+        let me = allUsers.find(u => u.id === myId);
+        if (me) {
+          me.icon = myIconData;
+          localStorage.setItem('chatApp_Users_v2', JSON.stringify(allUsers));
+        }
+        alert('プロフィールアイコンを変更しました！');
+      });
+    });
+
     // ＝＝＝ 1. アプリ起動時 ＝＝＝
     window.onload = () => {
-      // ユーザーデータの形式を「オブジェクト」に変更 (IDの重複チェックやアイコン表示のため)
       let allUsers = getSafeData('chatApp_Users_v2', []);
       const dummyUsers = [
         { id: 'taro_123', name: '太郎', icon: '👦' },
@@ -339,7 +372,6 @@
       
       let allUsers = getSafeData('chatApp_Users_v2', []);
       
-      // ★追加: ID重複チェック
       if (allUsers.find(u => u.id === id)) {
         alert('そのIDはすでに使われています！別のIDに変更してください。');
         return;
@@ -396,7 +428,6 @@
       if (friends.length === 0) return area.innerHTML = `<div class="no-friends">まだ友達がいません。</div>`;
 
       friends.forEach(friendId => {
-        // 友達のアイコンと名前を取得
         const fData = allUsers.find(u => u.id === friendId) || { name: friendId, icon: '👤' };
         
         const item = document.createElement('div');
@@ -461,7 +492,6 @@
         if (!user) user = { name: senderId === 'システム' ? '案内役' : senderId, icon: senderId === 'システム' ? '🤖' : '👤' };
       }
 
-      // ★追加: 左右にアイコンが並ぶLINE風の行レイアウト
       const row = document.createElement('div');
       row.className = 'msg-row ' + (isMine ? 'mine' : 'other');
       
@@ -482,7 +512,6 @@
       msgDiv.className = 'msg ' + (isMine ? 'my-msg' : 'bot-msg'); 
       msgDiv.textContent = text;
       
-      // コンテキストメニュー用
       msgDiv.addEventListener('click', (e) => {
         e.stopPropagation(); selectedText = text;
         const rect = appContainer.getBoundingClientRect();
