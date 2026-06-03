@@ -133,7 +133,6 @@
 
     <div class="app-container" id="appContainer">
         
-        <!-- ログイン画面 -->
         <div id="loginScreen" class="screen" style="display: flex; flex-direction: column; height: 100%;">
             <div class="header">
                 <span>🔑 ログイン</span>
@@ -149,7 +148,6 @@
             </div>
         </div>
 
-        <!-- ホーム画面 -->
         <div id="homeScreen" class="screen" style="display: none; flex-direction: column; height: 100%;">
             <div class="header">
                 <span>🏠 ホーム</span>
@@ -161,6 +159,8 @@
                     <div id="userAvatar" style="width: 80px; height: 80px; border-radius: 50%; background: #ccc; margin: 0 auto 10px; cursor: pointer;">👤</div>
                     <input type="file" id="iconUpload" hidden accept="image/*">
                     <h2 id="displayNameDisplay"></h2>
+                    <p>ID: <span id="displayIdDisplay" style="font-weight:bold;"></span> 
+                       <button id="editIdBtn" style="padding: 5px 10px; cursor: pointer;">変更</button></p>
                 </div>
                 <h3>友達リスト</h3>
                 <div id="friendsList" class="card" style="padding: 0;"></div>
@@ -171,7 +171,6 @@
             </div>
         </div>
 
-        <!-- チャット画面 -->
         <div id="chatScreen" class="screen" style="display: none; flex-direction: column; height: 100%;">
             <div class="header">
                 <button id="backBtn" style="background:none; border:none; color:white; cursor:pointer;">◀ 戻る</button>
@@ -193,24 +192,15 @@
         let friends = JSON.parse(localStorage.getItem('chatApp_Friends') || '[]');
         let currentFriendId = '';
 
-        // ダークモード切り替え機能
+        // ダークモード切り替え
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
         }
 
-        // 画面切り替えユーティリティ
+        // 画面切り替え
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
             document.getElementById(id).style.display = 'flex';
-        }
-
-        // メッセージのレンダリング
-        function addMessage(text, isMine) {
-            const wrapper = document.createElement('div');
-            wrapper.className = `msg-wrapper ${isMine ? 'mine' : ''}`;
-            wrapper.innerHTML = `<div class="msg ${isMine ? 'my-msg' : 'bot-msg'}">${text}</div>`;
-            document.getElementById('msgArea').appendChild(wrapper);
-            document.getElementById('msgArea').scrollTop = document.getElementById('msgArea').scrollHeight;
         }
 
         // ログイン処理
@@ -224,7 +214,27 @@
             }
         };
 
-        // 友達追加
+        // ID変更処理（★追加）
+        document.getElementById('editIdBtn').onclick = () => {
+            const newId = prompt('新しいIDを入力してください', myId);
+            if(newId) {
+                myId = newId;
+                localStorage.setItem('chatApp_MyId', myId);
+                document.getElementById('displayIdDisplay').textContent = myId;
+            }
+        };
+
+        // 初期化処理
+        window.onload = () => {
+            if(myName) {
+                document.getElementById('displayNameDisplay').textContent = myName;
+                document.getElementById('displayIdDisplay').textContent = myId; // ID表示
+                showScreen('homeScreen');
+                renderFriends();
+            }
+        };
+
+        // その他機能（友達リスト、チャット、天気などは既存のまま保持）
         document.getElementById('addFriendBtn').onclick = () => {
             const id = document.getElementById('friendIdInput').value;
             if(id && !friends.includes(id)) {
@@ -240,6 +250,8 @@
             friends.forEach(id => {
                 const item = document.createElement('div');
                 item.className = 'friend-item';
+                item.style.padding = '15px'; // 見やすさのためのスタイル調整
+                item.style.borderBottom = '1px solid #ddd';
                 item.innerHTML = `<span>👤 ${id}</span>`;
                 item.onclick = () => {
                     currentFriendId = id;
@@ -250,7 +262,6 @@
             });
         }
 
-        // チャット送信
         document.getElementById('sendBtn').onclick = () => {
             const input = document.getElementById('chatTextInput');
             if(input.value) {
@@ -259,16 +270,14 @@
             }
         };
 
-        // 初期化処理
-        window.onload = () => {
-            if(myName) {
-                document.getElementById('displayNameDisplay').textContent = myName;
-                showScreen('homeScreen');
-                renderFriends();
-            }
-        };
+        function addMessage(text, isMine) {
+            const wrapper = document.createElement('div');
+            wrapper.className = `msg-wrapper ${isMine ? 'mine' : ''}`;
+            wrapper.innerHTML = `<div class="msg ${isMine ? 'my-msg' : 'bot-msg'}">${text}</div>`;
+            document.getElementById('msgArea').appendChild(wrapper);
+            document.getElementById('msgArea').scrollTop = document.getElementById('msgArea').scrollHeight;
+        }
 
-        // 天気取得API
         async function fetchWeather() {
             try {
                 const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=35.69&longitude=139.69&current_weather=true');
@@ -278,7 +287,6 @@
         }
         fetchWeather();
 
-        // アイコンアップロード
         const avatar = document.getElementById('userAvatar');
         avatar.onclick = () => document.getElementById('iconUpload').click();
         document.getElementById('iconUpload').onchange = (e) => {
@@ -290,7 +298,6 @@
             reader.readAsDataURL(e.target.files[0]);
         };
 
-        // UI復元
         document.getElementById('backBtn').onclick = () => showScreen('homeScreen');
     </script>
 </body>
