@@ -124,7 +124,7 @@
           <div class="input-label">表示名（チャットで表示される名前）</div>
           <input type="text" id="myNameInput" class="text-input" placeholder="例: 太郎">
           
-          <div class="input-label">ユーザーID（重複不可）</div>
+          <div class="input-label">ユーザーID（ひらがな・重複不可）</div>
           <input type="text" id="myIdInput" class="text-input" placeholder="例: taro_123">
           
           <button id="loginBtn" class="action-btn" style="margin-top: 10px;">登録してはじめる</button>
@@ -256,16 +256,14 @@
     
     let myName = '';
     let myId = '';
-    let myIconData = '👤'; // デフォルトアイコン
+    let myIconData = '👤';
     let currentFriendId = '';
     let chatMode = 'private';
     let selectedText = '';
     
-    // ★マリオのコイン音を初期設定で読み込むように変更（同じフォルダに coin05.mp3 がある前提）
     const notificationSound = new Audio('coin05.mp3');
     notificationSound.volume = 0.5;
 
-    // 音声アップロード（任意で他の音に変えたい場合）
     document.getElementById('audioUpload').addEventListener('change', function(e) {
       if (e.target.files[0]) notificationSound.src = URL.createObjectURL(e.target.files[0]);
     });
@@ -274,7 +272,6 @@
       notificationSound.currentTime = 0; notificationSound.play().catch(e=>alert('再生できません'));
     });
 
-    // ＝＝＝ アイコン画像をリサイズして保存する共通関数 ＝＝＝
     function handleIconUpload(file, callback) {
       if (!file) return;
       const reader = new FileReader();
@@ -308,7 +305,6 @@
       }
     }
 
-    // 初期設定画面でのアイコンアップロード
     document.getElementById('myIconUpload').addEventListener('change', function(e) {
       handleIconUpload(e.target.files[0], (data) => {
         myIconData = data;
@@ -316,7 +312,6 @@
       });
     });
 
-    // ホーム画面でのアイコン変更機能
     document.getElementById('homeIconChangeBtn').addEventListener('click', () => {
       document.getElementById('homeIconUploadHidden').click();
     });
@@ -364,11 +359,17 @@
       }
     };
 
-    // ＝＝＝ 2. ログイン処理（重複IDチェック追加） ＝＝＝
+    // ＝＝＝ 2. ログイン処理（重複ID・ひらがなチェック追加） ＝＝＝
     document.getElementById('loginBtn').addEventListener('click', () => {
       const name = document.getElementById('myNameInput').value.trim();
       const id = document.getElementById('myIdInput').value.trim();
       if (name === '' || id === '') { alert('表示名とユーザーIDを入力してください！'); return; }
+      
+      // ★追加: ひらがなが含まれているかのチェック
+      if (id.match(/[\u3040-\u309F]/)) {
+        alert('ユーザーIDに「ひらがな」は使用できません！英数字などで入力してください。');
+        return;
+      }
       
       let allUsers = getSafeData('chatApp_Users_v2', []);
       
@@ -392,7 +393,6 @@
       loginScreen.classList.remove('active'); homeScreen.classList.add('active');
     });
 
-    // ★追加: ホーム画面での名前変更処理
     document.getElementById('editNameBtn').addEventListener('click', () => {
       const newName = prompt('新しい表示名を入力してください', myName);
       if (newName !== null && newName.trim() !== '') {
@@ -400,7 +400,6 @@
         localStorage.setItem('chatApp_MyName', myName);
         document.getElementById('displayMyName').textContent = myName;
         
-        // 全体ユーザーリストの自分の名前も更新
         let allUsers = getSafeData('chatApp_Users_v2', []);
         let me = allUsers.find(u => u.id === myId);
         if (me) {
@@ -410,20 +409,26 @@
       }
     });
 
-    // ★追加: ホーム画面でのID変更処理
+    // ＝＝＝ 3. ホーム画面でのID変更処理（ひらがなチェック追加） ＝＝＝
     document.getElementById('editIdBtn').addEventListener('click', () => {
-      const newId = prompt('新しいユーザーIDを入力してください（重複不可）', myId);
+      // ★修正: 案内テキストを変更
+      const newId = prompt('新しいユーザーIDを入力してください（ひらがな・重複不可）', myId);
       if (newId !== null && newId.trim() !== '' && newId.trim() !== myId) {
         const trimmedId = newId.trim();
+        
+        // ★追加: ひらがなが含まれているかのチェック
+        if (trimmedId.match(/[\u3040-\u309F]/)) {
+          alert('ユーザーIDに「ひらがな」は使用できません！英数字などで入力してください。');
+          return;
+        }
+
         let allUsers = getSafeData('chatApp_Users_v2', []);
         
-        // 重複チェック
         if (allUsers.find(u => u.id === trimmedId)) {
           alert('そのIDはすでに使われています！別のIDを指定してください。');
           return;
         }
 
-        // 全体ユーザーリストの自分のIDを更新
         let meIndex = allUsers.findIndex(u => u.id === myId);
         if (meIndex !== -1) {
           allUsers[meIndex].id = trimmedId;
@@ -437,7 +442,7 @@
       }
     });
 
-    // ＝＝＝ 3. 友達追加とリスト ＝＝＝
+    // ＝＝＝ 4. 友達追加とリスト ＝＝＝
     document.getElementById('addFriendBtn').addEventListener('click', () => {
       const id = document.getElementById('friendIdInput').value.trim();
       if (id === '') return alert('相手のIDを入力してください！');
@@ -516,7 +521,7 @@
     document.getElementById('openFriendsBtn').addEventListener('click', () => { homeScreen.classList.remove('active'); friendsScreen.classList.add('active'); loadFriends(); });
     document.getElementById('backFromFriendsBtn').addEventListener('click', () => { friendsScreen.classList.remove('active'); homeScreen.classList.add('active'); });
 
-    // ＝＝＝ 4. チャット画面・アイコン表示機能 ＝＝＝
+    // ＝＝＝ 5. チャット画面・アイコン表示機能 ＝＝＝
     document.getElementById('globalChatBtn').addEventListener('click', () => {
       chatMode = 'global'; homeScreen.classList.remove('active'); chatScreen.classList.add('active');
       document.getElementById('chatTitle').textContent = '🌍 全体チャット'; document.getElementById('msgArea').innerHTML = '';
@@ -591,7 +596,7 @@
     document.getElementById('chatTextInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(); });
     document.addEventListener('click', () => { document.getElementById('contextMenu').style.display = 'none'; });
 
-    // ＝＝＝ 5. 通話機能 ＝＝＝
+    // ＝＝＝ 6. 通話機能 ＝＝＝
     let callInterval, callSeconds = 0, callTimeout;
     function formatTime(s) { return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`; }
     
