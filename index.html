@@ -223,7 +223,7 @@
   <script src="/socket.io/socket.io.js"></script>
 
   <script>
-    // ★サーバーへの接続を開始 ★
+    // ★ サーバーへの接続を開始 ★
     const socket = io();
 
     function getSafeData(key, defaultData) {
@@ -376,6 +376,7 @@
       }
       
       let allUsers = getSafeData('chatApp_Users_v2', []);
+      
       if (allUsers.find(u => u.id === id)) {
         alert('そのIDはすでに使われています！別のIDに変更してください。');
         return;
@@ -417,12 +418,14 @@
       const newId = prompt('新しいユーザーIDを入力してください（ひらがな・重複不可）', myId);
       if (newId !== null && newId.trim() !== '' && newId.trim() !== myId) {
         const trimmedId = newId.trim();
+        
         if (trimmedId.match(/[\u3040-\u309F]/)) {
           alert('ユーザーIDに「ひらがな」は使用できません！英数字などで入力してください。');
           return;
         }
 
         let allUsers = getSafeData('chatApp_Users_v2', []);
+        
         if (allUsers.find(u => u.id === trimmedId)) {
           alert('そのIDはすでに使われています！別のIDを指定してください。');
           return;
@@ -447,12 +450,9 @@
       if (id === '') return alert('相手のIDを入力してください！');
       if (id === myId) return alert('自分自身のIDは追加できません！');
       
-      // ★オンラインで誰とでも繋がれるように、ID存在チェックを一時的に甘くするかは運用次第ですが、
-      // ここでは元のままとしておきます（相手が初期設定を終えていれば追加可能）
       let allUsers = getSafeData('chatApp_Users_v2', []);
       if (!allUsers.find(u => u.id === id)) {
-        // ★本来はサーバーに問い合わせるべきですが、今回は簡易的にローカル保存のまま進めます
-        // オンライン化に伴い、とりあえず追加はできるように許可します
+        // オンライン化に伴い、相手が未登録でも一旦リストに追加できるようにします
         allUsers.push({ id: id, name: id, icon: '👤' });
         localStorage.setItem('chatApp_Users_v2', JSON.stringify(allUsers));
       }
@@ -588,7 +588,7 @@
       }
     }
 
-    // ★【変更】送信処理（ボット返信を消し、サーバーへ送るように変更）★
+    // ★ オンライン対応のための送信処理 ★
     function handleSend() {
       const text = document.getElementById('chatTextInput').value.trim();
       if (text === '') return;
@@ -597,7 +597,7 @@
       addMessage(text, true); 
       document.getElementById('chatTextInput').value = '';
       
-      // サーバーへメッセージを送信する
+      // サーバーへリアルタイムでメッセージを送信する
       socket.emit('sendMessage', {
         text: text,
         senderId: myId,
@@ -606,46 +606,54 @@
         mode: chatMode
       });
     }
-    
     document.getElementById('sendBtn').addEventListener('click', handleSend);
     document.getElementById('chatTextInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(); });
     document.addEventListener('click', () => { document.getElementById('contextMenu').style.display = 'none'; });
 
-    // ★【追加】サーバーからメッセージを受信した時の処理 ★
+    // ★ サーバーからオンラインメッセージを受信した時のリアルタイム処理 ★
     socket.on('receiveMessage', (data) => {
-      // 自分が送ったメッセージはすでに画面に表示しているので無視する
+      // 自分が送ったメッセージはスルーする
       if (data.senderId === myId) return;
 
-      // 全体チャットで、受信したデータも全体向けの場合
+      // 全体チャットを開いている時に、全体向けのメッセージが来たら表示
       if (chatMode === 'global' && data.mode === 'global') {
          addMessage(data.text, false, data.senderId);
       } 
-      // 自分宛てのプライベートメッセージで、ちょうどその相手とのチャットを開いている場合
+      // 個別チャットを開いている時に、目の前の相手から自分宛てにメッセージが来たら表示
       else if (chatMode === 'private' && data.mode === 'private' && data.targetId === myId && currentFriendId === data.senderId) {
          addMessage(data.text, false, data.senderId);
       }
-      // ※ここに「チャット画面を開いていない時の通知処理」を追加することも可能です
     });
 
-    // ＝＝＝ 6. 通話機能 ＝＝＝
+    // ＝＝＝ 6. 通話機能（全体チャット対応版） ＝＝＝
     let callInterval, callSeconds = 0, callTimeout;
     function formatTime(s) { return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`; }
     
     document.getElementById('startCallBtn').addEventListener('click', () => {
-      if (chatMode === 'global') return alert('全体チャットでは通話できません！');
-      const allUsers = getSafeData('chatApp_Users_v2', []);
-      const fData = allUsers.find(u => u.id === currentFriendId) || { name: currentFriendId, icon: '👤' };
+      let callName = '';
+      let callIcon = '';
+
+      // 全体チャットと個別チャットで通話画面の表記を切り替える
+      if (chatMode === 'global') {
+        callName = '🌍 全体通話';
+        callIcon = '🗣️';
+      } else {
+        const allUsers = getSafeData('chatApp_Users_v2', []);
+        const fData = allUsers.find(u => u.id === currentFriendId) || { name: currentFriendId, icon: '👤' };
+        callName = fData.name;
+        callIcon = fData.icon;
+      }
 
       chatScreen.classList.remove('active'); 
       document.getElementById('callingScreen').classList.add('active');
-      document.getElementById('callingNameDisplay').textContent = fData.name;
-      setIconDisplay(document.getElementById('callingAvatar'), fData.icon);
+      document.getElementById('callingNameDisplay').textContent = callName;
+      setIconDisplay(document.getElementById('callingAvatar'), callIcon);
 
       callTimeout = setTimeout(() => {
         document.getElementById('callingScreen').classList.remove('active'); 
         document.getElementById('inCallScreen').classList.add('active');
-        document.getElementById('inCallNameDisplay').textContent = fData.name;
-        setIconDisplay(document.getElementById('inCallAvatar'), fData.icon);
+        document.getElementById('inCallNameDisplay').textContent = callName;
+        setIconDisplay(document.getElementById('inCallAvatar'), callIcon);
         
         callSeconds = 0; document.getElementById('callTimerDisplay').textContent = formatTime(callSeconds);
         callInterval = setInterval(() => { callSeconds++; document.getElementById('callTimerDisplay').textContent = formatTime(callSeconds); }, 1000);
