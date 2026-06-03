@@ -3,45 +3,48 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VIP Chat App</title>
+  <title>VIP Chat (Desktop Optimized)</title>
   <style>
     /* ＝＝＝ 全体のレイアウト ＝＝＝ */
     * { box-sizing: border-box; }
-    body { font-family: 'Segoe UI', sans-serif; background-color: #e5ddd5; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
-    .app-container { width: 100%; max-width: 400px; height: 90vh; background: #fff; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; border-radius: 20px; }
-
-    /* ＝＝＝ 各パーツのデザイン ＝＝＝ */
-    .header { background: #075e54; color: white; padding: 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
-    .content { padding: 20px; flex: 1; overflow-y: auto; }
-    .card { background: #f9f9f9; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eee; }
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f2f5; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
     
-    input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; }
-    button { width: 100%; padding: 12px; border: none; border-radius: 8px; background: #128c7e; color: white; font-weight: bold; cursor: pointer; }
+    /* 画面幅を広く設定（800pxまで対応） */
+    .app-container { width: 95%; max-width: 800px; height: 90vh; background: #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; border-radius: 12px; }
+
+    /* ＝＝＝ パーツのデザイン ＝＝＝ */
+    .header { background: #075e54; color: white; padding: 20px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; font-size: 1.2rem; }
+    .content { padding: 30px; flex: 1; overflow-y: auto; }
+    
+    .card { background: #fff; padding: 25px; border-radius: 15px; margin-bottom: 20px; border: 1px solid #ddd; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    
+    input { width: 100%; padding: 15px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; }
+    button { width: 100%; padding: 15px; border: none; border-radius: 8px; background: #128c7e; color: white; font-weight: bold; cursor: pointer; font-size: 1rem; }
     button:hover { background: #0b7366; }
 
-    /* プロフィール・友達リスト */
-    .avatar { width: 80px; height: 80px; border-radius: 50%; background: #ccc; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; }
-    .avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .friend-item { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-    .friend-item:hover { background: #fdfdfd; }
+    /* 友達リスト・リスト表示 */
+    .friend-item { padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 1.1rem; }
+    .friend-item:hover { background: #f9f9f9; }
 
     /* チャット画面 */
-    .msg-area { flex: 1; background: #e5ddd5; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-    .msg { max-width: 80%; padding: 10px 15px; border-radius: 10px; font-size: 14px; }
+    .msg-area { flex: 1; background: #e5ddd5; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+    .msg { max-width: 70%; padding: 12px 20px; border-radius: 15px; font-size: 1rem; line-height: 1.4; }
     .msg.mine { align-self: flex-end; background: #dcf8c6; }
     .msg.other { align-self: flex-start; background: #fff; }
+    
+    .chat-footer { padding: 20px; display: flex; background: #f0f0f0; }
   </style>
 </head>
 <body>
 
 <div class="app-container">
   <div id="loginScreen" class="screen">
-    <div class="header">ログイン</div>
+    <div class="header">ログイン・設定</div>
     <div class="content">
       <div class="card">
-        <input type="text" id="nameInput" placeholder="表示名">
-        <input type="text" id="idInput" placeholder="ユーザーID">
-        <button id="loginBtn">はじめる</button>
+        <input type="text" id="nameInput" placeholder="表示名を入力">
+        <input type="text" id="idInput" placeholder="ユーザーIDを入力">
+        <button id="loginBtn">アプリを開始する</button>
       </div>
     </div>
   </div>
@@ -49,48 +52,52 @@
   <div id="homeScreen" class="screen" style="display:none;">
     <div class="header">
       <span>VIP Chat</span>
-      <span id="weather">☁️--</span>
+      <span id="weather" style="font-size:0.9rem; font-weight:normal;">☁️--</span>
     </div>
     <div class="content">
       <div class="card" style="text-align:center;">
-        <div id="avatar" class="avatar">👤</div>
+        <div id="avatar" style="width:100px; height:100px; border-radius:50%; background:#eee; margin:0 auto 15px; display:flex; align-items:center; justify-content:center; cursor:pointer; overflow:hidden;">👤</div>
         <input type="file" id="fileInput" hidden accept="image/*">
-        <div id="dispName" style="font-weight:bold;"></div>
+        <div id="dispName" style="font-size:1.4rem; font-weight:bold;"></div>
       </div>
-      <h3>友達リスト</h3>
-      <div id="friendList" class="card"></div>
-      <input type="text" id="addId" placeholder="友達のIDを入力">
-      <button id="addBtn">追加</button>
-      <button id="globalBtn" style="margin-top:10px; background:#e67e22;">全体チャット</button>
+      
+      <h2 style="margin-bottom:15px;">友達リスト</h2>
+      <div id="friendList" class="card" style="padding:0;"></div>
+      
+      <div class="card">
+        <input type="text" id="addId" placeholder="友達のID">
+        <button id="addBtn">友達を追加</button>
+        <button id="globalBtn" style="margin-top:15px; background:#e67e22;">全体チャットに参加</button>
+      </div>
     </div>
   </div>
 
   <div id="chatScreen" class="screen" style="display:none;">
     <div class="header">
-      <button id="backBtn" style="width:auto;">◀</button>
+      <button id="backBtn" style="width:auto; padding:10px;">◀ 戻る</button>
       <span id="chatTitle"></span>
-      <button id="callBtn" style="width:auto;">📞</button>
+      <button id="callBtn" style="width:auto; padding:10px;">📞 通話</button>
     </div>
     <div id="msgArea" class="msg-area"></div>
-    <div style="padding:10px; display:flex;">
-      <input type="text" id="chatInput" placeholder="メッセージ...">
-      <button id="sendBtn" style="width:auto; margin-left:5px;">送信</button>
+    <div class="chat-footer">
+      <input type="text" id="chatInput" placeholder="メッセージを入力..." style="margin-bottom:0;">
+      <button id="sendBtn" style="width:auto; margin-left:10px;">送信</button>
     </div>
   </div>
 </div>
 
 <script>
-  /* ＝＝＝ 1. 状態管理 ＝＝＝ */
+  // 状態管理
   let myName = localStorage.getItem('chatApp_MyName') || '';
   let friends = JSON.parse(localStorage.getItem('chatApp_Friends') || '[]');
 
-  /* ＝＝＝ 2. 画面切り替え ＝＝＝ */
+  // 表示切り替え
   function show(id) {
     document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
     document.getElementById(id).style.display = 'flex';
   }
 
-  /* ＝＝＝ 3. アプリ初期化 ＝＝＝ */
+  // 初期化
   window.onload = () => {
     if(myName) {
       document.getElementById('dispName').textContent = myName;
@@ -102,14 +109,25 @@
     }
   };
 
-  /* ＝＝＝ 4. 各機能のロジック ＝＝＝ */
+  // アイコン
+  const avatar = document.getElementById('avatar');
+  avatar.onclick = () => document.getElementById('fileInput').click();
+  document.getElementById('fileInput').onchange = (e) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      localStorage.setItem('chatApp_MyIcon', ev.target.result);
+      avatar.innerHTML = `<img src="${ev.target.result}" style="width:100%; height:100%; object-fit:cover;">`;
+    };
+    reader.readAsDataURL(e.target.files[0]);
+  };
+
   // ログイン
   document.getElementById('loginBtn').onclick = () => {
     localStorage.setItem('chatApp_MyName', document.getElementById('nameInput').value);
     location.reload();
   };
 
-  // 友達追加
+  // 友達
   document.getElementById('addBtn').onclick = () => {
     const id = document.getElementById('addId').value;
     if(id && !friends.includes(id)) {
@@ -125,7 +143,7 @@
     friends.forEach(id => {
       const div = document.createElement('div');
       div.className = 'friend-item';
-      div.innerHTML = `<span>${id}</span> <span>＞</span>`;
+      div.innerHTML = `<span>${id}</span> <span>💬</span>`;
       div.onclick = () => startChat(id);
       list.appendChild(div);
     });
@@ -134,6 +152,7 @@
   // チャット
   function startChat(title) {
     document.getElementById('chatTitle').textContent = title;
+    document.getElementById('msgArea').innerHTML = '';
     show('chatScreen');
   }
 
@@ -149,7 +168,9 @@
     }
   };
 
-  // 天気取得
+  document.getElementById('globalBtn').onclick = () => startChat('全体チャット');
+
+  // 天気
   async function updateWeather() {
     try {
       const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=35.69&longitude=139.69&current_weather=true');
