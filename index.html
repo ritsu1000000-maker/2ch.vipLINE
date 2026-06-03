@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>チャット（ガチ共有機能つき）</title>
+  <title>チャット（Firebase完全同期版）</title>
   <style>
     /* ＝＝＝ 全体の基本設定 ＝＝＝ */
     body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
@@ -73,7 +73,7 @@
     .menu-item:last-child { border-bottom: none; }
     .menu-item:hover { background: #f5f5f5; }
 
-    /* ＝＝＝ 🌟 ガチ共有メニュー（ボトムシート） 🌟 ＝＝＝ */
+    /* ＝＝＝ ガチ共有メニュー（ボトムシート） ＝＝＝ */
     .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; display: none; opacity: 0; transition: opacity 0.3s; }
     .modal-overlay.show { display: block; opacity: 1; }
     .share-modal { position: absolute; bottom: -400px; left: 0; width: 100%; background: #fff; border-radius: 24px 24px 0 0; padding: 25px 20px 40px; box-sizing: border-box; transition: bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1); z-index: 1000; display: flex; flex-direction: column; align-items: center; box-shadow: 0 -5px 25px rgba(0,0,0,0.15); }
@@ -120,7 +120,6 @@
     <div id="modalOverlay" class="modal-overlay"></div>
     <div id="shareModal" class="share-modal">
       <h3 id="shareModalTitle" style="margin-top: 0; margin-bottom: 25px; color: #333; font-size: 18px;">招待 / 共有する</h3>
-      
       <div style="display: flex; justify-content: space-around; width: 100%; max-width: 400px; margin-bottom: 30px;">
         <div class="share-icon-wrap" id="shareLineBtn">
            <div class="share-icon-btn" style="background: #06C755;">💬</div>
@@ -139,7 +138,6 @@
            <span style="font-size: 13px; color: #555; font-weight: bold;">コピー</span>
         </div>
       </div>
-      
       <button id="closeShareModal" class="action-btn" style="background: #f1f2f6; color: #333; border-radius: 20px; width: 90%;">キャンセル</button>
     </div>
 
@@ -264,23 +262,20 @@
   </div>
 
   <script type="module">
+    // ★ ユーザー情報同期のため get, set, child を追加 ★
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-analytics.js";
-    import { getDatabase, ref, push, onChildAdded, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+    import { getDatabase, ref, push, onChildAdded, query, limitToLast, set, get, child } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-    // Firebase設定
     const firebaseConfig = {
       apiKey: "AIzaSyBCQArL0Q1wDveRywCpet5Nor3PuRYt7fM",
       authDomain: "sabopennet.firebaseapp.com",
       projectId: "sabopennet",
       storageBucket: "sabopennet.firebasestorage.app",
       messagingSenderId: "284308308452",
-      appId: "1:284308308452:web:e36dd991e55a0e60e4c7f1",
-      measurementId: "G-K17XRK5KRN"
+      appId: "1:284308308452:web:e36dd991e55a0e60e4c7f1"
     };
 
     const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
     const db = getDatabase(app);
 
     function getSafeData(key, defaultData) {
@@ -289,8 +284,6 @@
     }
 
     async function fetchWeather() {
-      const weatherLogin = document.getElementById('weatherLogin');
-      const weatherHome = document.getElementById('weatherHome');
       try {
         const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=35.6983&longitude=139.9822&current_weather=true');
         const data = await res.json();
@@ -298,7 +291,7 @@
         let icon = '☁️'; 
         if (code === 0) icon = '☀️'; else if (code <= 3) icon = '⛅'; else if (code <= 67) icon = '🌧️'; else if (code <= 77) icon = '❄️'; else if (code >= 95) icon = '⚡';
         const text = `${icon} ${data.current_weather.temperature}℃`;
-        weatherLogin.textContent = text; weatherHome.textContent = text;
+        document.getElementById('weatherLogin').textContent = text; document.getElementById('weatherHome').textContent = text;
       } catch (err) { }
     }
     fetchWeather();
@@ -312,18 +305,10 @@
     let myName = '', myId = '', myIconData = '👤', currentFriendId = '', currentRoomId = '';
     let chatMode = 'private', selectedText = '', selectedSenderId = '';
     let pendingInviteId = null, pendingRoomId = null, currentChatUnsubscribe = null;
-    
-    // 🌟 共有モーダル管理変数 🌟
-    let currentShareTitle = '';
-    let currentShareText = '';
-    let currentShareUrl = '';
+    let currentShareTitle = '', currentShareText = '', currentShareUrl = '';
 
     const notificationSound = new Audio('coin05.mp3'); notificationSound.volume = 0.5;
 
-    document.getElementById('audioUpload').addEventListener('change', function(e) {
-      if (e.target.files[0]) notificationSound.src = URL.createObjectURL(e.target.files[0]);
-    });
-    
     function handleIconUpload(file, callback) {
       if (!file) return;
       const reader = new FileReader();
@@ -349,11 +334,12 @@
       handleIconUpload(e.target.files[0], (data) => { myIconData = data; setIconDisplay(document.getElementById('iconPreview'), myIconData); });
     });
     document.getElementById('homeIconChangeBtn').addEventListener('click', () => { document.getElementById('homeIconUploadHidden').click(); });
+    
+    // ★ アイコン変更時、Firebaseのユーザー情報も更新 ★
     document.getElementById('homeIconUploadHidden').addEventListener('change', function(e) {
-      handleIconUpload(e.target.files[0], (data) => {
+      handleIconUpload(e.target.files[0], async (data) => {
         myIconData = data; localStorage.setItem('chatApp_MyIcon', myIconData); setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
-        let allUsers = getSafeData('chatApp_Users_v2', []); let me = allUsers.find(u => u.id === myId);
-        if (me) { me.icon = myIconData; localStorage.setItem('chatApp_Users_v2', JSON.stringify(allUsers)); }
+        await set(ref(db, `users/${myId}`), { name: myName, icon: myIconData });
         alert('アイコンを変更しました！');
       });
     });
@@ -381,9 +367,26 @@
       }
     };
 
-    function addFriendAndStartChat(friendId) {
-      let allUsers = getSafeData('chatApp_Users_v2', []);
-      if (!allUsers.find(u => u.id === friendId)) { allUsers.push({ id: friendId, name: friendId, icon: '👤' }); localStorage.setItem('chatApp_Users_v2', JSON.stringify(allUsers)); }
+    // ★ 友達追加の際、Firebaseから最新の名前とアイコンを取得する ★
+    async function addFriendAndStartChat(friendId) {
+      try {
+        const snapshot = await get(child(ref(db), `users/${friendId}`));
+        if (snapshot.exists()) {
+          const userData = snapshot.val();
+          let allUsers = getSafeData('chatApp_Users_v2', []);
+          allUsers = allUsers.filter(u => u.id !== friendId); // 重複削除
+          allUsers.push({ id: friendId, name: userData.name, icon: userData.icon });
+          localStorage.setItem('chatApp_Users_v2', JSON.stringify(allUsers));
+        } else {
+          // DBにまだいない場合（初期ユーザーなど）
+          let allUsers = getSafeData('chatApp_Users_v2', []);
+          if (!allUsers.find(u => u.id === friendId)) {
+            allUsers.push({ id: friendId, name: friendId, icon: '👤' });
+            localStorage.setItem('chatApp_Users_v2', JSON.stringify(allUsers));
+          }
+        }
+      } catch(e) { console.log(e); }
+
       let friends = getSafeData('chatApp_Friends', []);
       if (!friends.includes(friendId)) { friends.push(friendId); localStorage.setItem('chatApp_Friends', JSON.stringify(friends)); }
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -398,23 +401,40 @@
       loadChatMessages('room', roomId);
     }
 
-    document.getElementById('loginBtn').addEventListener('click', () => {
+    // ★ ログイン時、Firebaseと通信してプロフィールを登録/取得する ★
+    document.getElementById('loginBtn').addEventListener('click', async () => {
       const name = document.getElementById('myNameInput').value.trim(), id = document.getElementById('myIdInput').value.trim();
       if (name === '' || id === '') return alert('入力してください！');
       if (id.match(/[\u3040-\u309F]/)) return alert('ひらがな不可です！');
       
-      let allUsers = getSafeData('chatApp_Users_v2', []), existingUser = allUsers.find(u => u.id === id);
-      if (existingUser) { myName = existingUser.name; myId = existingUser.id; myIconData = existingUser.icon; } 
-      else { myName = name; myId = id; allUsers.push({ id: myId, name: myName, icon: myIconData }); localStorage.setItem('chatApp_Users_v2', JSON.stringify(allUsers)); }
+      const loginBtn = document.getElementById('loginBtn');
+      loginBtn.textContent = '通信中...'; loginBtn.disabled = true;
 
-      localStorage.setItem('chatApp_MyName', myName); localStorage.setItem('chatApp_MyId', myId); localStorage.setItem('chatApp_MyIcon', myIconData);
-      document.getElementById('displayMyName').textContent = myName; document.getElementById('displayMyId').textContent = myId;
-      setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
-      
-      loginScreen.classList.remove('active'); 
-      if (pendingInviteId && pendingInviteId !== myId) addFriendAndStartChat(pendingInviteId);
-      else if (pendingRoomId) startRoomChat(pendingRoomId);
-      else homeScreen.classList.add('active');
+      try {
+        const snapshot = await get(child(ref(db), `users/${id}`));
+        if (snapshot.exists()) {
+          const userData = snapshot.val();
+          myName = userData.name; myId = id; myIconData = userData.icon;
+          alert(`既存のアカウント「${myName}」さんとしてログインします。`);
+        } else {
+          myName = name; myId = id;
+          await set(ref(db, `users/${id}`), { name: myName, icon: myIconData });
+        }
+
+        localStorage.setItem('chatApp_MyName', myName); localStorage.setItem('chatApp_MyId', myId); localStorage.setItem('chatApp_MyIcon', myIconData);
+        document.getElementById('displayMyName').textContent = myName; document.getElementById('displayMyId').textContent = myId;
+        setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
+        
+        loginScreen.classList.remove('active'); 
+        if (pendingInviteId && pendingInviteId !== myId) addFriendAndStartChat(pendingInviteId);
+        else if (pendingRoomId) startRoomChat(pendingRoomId);
+        else homeScreen.classList.add('active');
+
+      } catch (error) {
+        alert('通信エラーが発生しました。SafariやChromeブラウザで開き直すか、時間を置いてお試しください。\n' + error.message);
+      } finally {
+        loginBtn.textContent = '登録 / ログイン'; loginBtn.disabled = false;
+      }
     });
 
     document.getElementById('joinRoomBtn').addEventListener('click', () => {
@@ -423,16 +443,44 @@
       document.getElementById('roomNameInput').value = ''; startRoomChat(roomId);
     });
 
-    document.getElementById('addFriendBtn').addEventListener('click', () => {
+    // ★ 手動で友達追加する際も、Firebaseから最新のプロフを取得 ★
+    document.getElementById('addFriendBtn').addEventListener('click', async () => {
       const id = document.getElementById('friendIdInput').value.trim();
       if (id === '') return alert('相手のIDを入力してください！');
       if (id === myId) return alert('自分自身は追加できません！');
-      let allUsers = getSafeData('chatApp_Users_v2', []);
-      if (!allUsers.find(u => u.id === id)) { allUsers.push({ id: id, name: id, icon: '👤' }); localStorage.setItem('chatApp_Users_v2', JSON.stringify(allUsers)); }
-      let friends = getSafeData('chatApp_Friends', []);
-      if (!friends.includes(id)) { friends.push(id); localStorage.setItem('chatApp_Friends', JSON.stringify(friends)); }
-      currentFriendId = id; document.getElementById('friendIdInput').value = '';
-      setTimeout(() => { document.getElementById('notification').classList.add('show'); document.getElementById('notification').innerHTML = `✅ <b>${currentFriendId}</b> を追加しました！`; }, 500);
+      
+      const btn = document.getElementById('addFriendBtn'); btn.disabled = true; btn.textContent = '検索中...';
+      
+      try {
+        const snapshot = await get(child(ref(db), `users/${id}`));
+        let displayName = id;
+        
+        if (snapshot.exists()) {
+          const userData = snapshot.val();
+          displayName = userData.name;
+          let allUsers = getSafeData('chatApp_Users_v2', []);
+          allUsers = allUsers.filter(u => u.id !== id);
+          allUsers.push({ id: id, name: userData.name, icon: userData.icon });
+          localStorage.setItem('chatApp_Users_v2', JSON.stringify(allUsers));
+        } else {
+          // DBにいなくても一旦追加は許可する
+          let allUsers = getSafeData('chatApp_Users_v2', []);
+          if (!allUsers.find(u => u.id === id)) {
+            allUsers.push({ id: id, name: id, icon: '👤' });
+            localStorage.setItem('chatApp_Users_v2', JSON.stringify(allUsers));
+          }
+        }
+
+        let friends = getSafeData('chatApp_Friends', []);
+        if (!friends.includes(id)) { friends.push(id); localStorage.setItem('chatApp_Friends', JSON.stringify(friends)); }
+        currentFriendId = id; document.getElementById('friendIdInput').value = '';
+        
+        document.getElementById('notification').classList.add('show'); 
+        document.getElementById('notification').innerHTML = `✅ <b>${displayName}</b> を追加しました！`;
+        setTimeout(() => document.getElementById('notification').classList.remove('show'), 3000);
+      } catch (e) { alert('検索エラー'); }
+      
+      btn.disabled = false; btn.textContent = 'IDを追加して話す';
     });
 
     document.getElementById('notification').addEventListener('click', () => { document.getElementById('notification').classList.remove('show'); startPrivateChat(currentFriendId); });
@@ -539,21 +587,13 @@
     document.getElementById('cancelCallBtn').addEventListener('click', () => { clearTimeout(callTimeout); document.getElementById('callingScreen').classList.remove('active'); chatScreen.classList.add('active'); });
     document.getElementById('endCallBtn').addEventListener('click', () => { clearInterval(callInterval); document.getElementById('inCallScreen').classList.remove('active'); chatScreen.classList.add('active'); });
 
-    // ＝＝＝ 🌟 ガチ共有メニュー（ボトムシート）の制御 🌟 ＝＝＝
-
+    // ＝＝＝ ガチ共有メニュー（ボトムシート）の制御 ＝＝＝
     function openShareModal(title, text, url) {
-      currentShareTitle = title;
-      currentShareText = text;
-      currentShareUrl = url;
-
+      currentShareTitle = title; currentShareText = text; currentShareUrl = url;
       document.getElementById('shareModalTitle').textContent = title;
-      
-      // スマホ標準シェア機能が非対応のブラウザではボタンを隠す
       if (!navigator.share) document.getElementById('shareNativeBtn').style.display = 'none';
       else document.getElementById('shareNativeBtn').style.display = 'flex';
-
-      document.getElementById('modalOverlay').classList.add('show');
-      document.getElementById('shareModal').classList.add('show');
+      document.getElementById('modalOverlay').classList.add('show'); document.getElementById('shareModal').classList.add('show');
     }
 
     function closeShareModal() {
@@ -564,112 +604,79 @@
     document.getElementById('closeShareModal').addEventListener('click', closeShareModal);
     document.getElementById('modalOverlay').addEventListener('click', closeShareModal);
 
-    // LINE連携
     document.getElementById('shareLineBtn').addEventListener('click', () => {
       const fullText = currentShareText + (currentShareUrl ? '\n' + currentShareUrl : '');
-      // LINEアプリに直接データを渡す専用URL（LINEがインストールされていれば開きます）
       window.open(`https://line.me/R/msg/text/?${encodeURIComponent(fullText)}`, '_blank');
       closeShareModal();
     });
 
-    // Twitter連携
     document.getElementById('shareTwitterBtn').addEventListener('click', () => {
       const fullText = currentShareText + (currentShareUrl ? '\n' + currentShareUrl : '');
       window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(fullText)}`, '_blank');
       closeShareModal();
     });
 
-    // スマホ標準機能
     document.getElementById('shareNativeBtn').addEventListener('click', () => {
-      if (navigator.share) {
-        navigator.share({ title: currentShareTitle, text: currentShareText, url: currentShareUrl || '' }).catch(e => console.log('シェアキャンセル'));
-      }
+      if (navigator.share) navigator.share({ title: currentShareTitle, text: currentShareText, url: currentShareUrl || '' }).catch(e => {});
       closeShareModal();
     });
 
-    // コピー
     document.getElementById('shareCopyBtn').addEventListener('click', () => {
       const fullText = currentShareText + (currentShareUrl ? '\n' + currentShareUrl : '');
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(fullText).then(() => alert('クリップボードにコピーしました！'));
-      } else {
-        prompt('コピーしてください', fullText);
-      }
+      if (navigator.clipboard) navigator.clipboard.writeText(fullText).then(() => alert('コピーしました！'));
+      else prompt('コピーしてください', fullText);
       closeShareModal();
     });
 
-
-    // ＝＝＝ 各種ボタンから共有モーダルを呼び出す ＝＝＝
-
-    // 1. ホーム画面の「友達をアプリに招待する」
     document.getElementById('openHomeShareBtn').addEventListener('click', () => {
       const inviteUrl = `${window.location.origin}${window.location.pathname}?friend=${myId}`;
       openShareModal('友達を招待する', '一緒にチャットアプリで話そう！\nここから追加してね👇', inviteUrl);
     });
 
-    // 2. チャット画面右上の「🔗 (この部屋に招待)」
     document.getElementById('inviteChatBtn').addEventListener('click', () => {
-      let inviteUrl = '';
-      let msg = '';
-      if (chatMode === 'private') {
-         inviteUrl = `${window.location.origin}${window.location.pathname}?friend=${myId}`;
-         msg = '個別チャットに招待します👇';
-      } else if (chatMode === 'room') {
-         inviteUrl = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(currentRoomId)}`;
-         msg = `ルーム「${currentRoomId}」に招待します👇`;
-      } else if (chatMode === 'global') {
-         return alert('全体チャットはURLを使わずに誰でも入室できます！');
-      }
+      let inviteUrl = '', msg = '';
+      if (chatMode === 'private') { inviteUrl = `${window.location.origin}${window.location.pathname}?friend=${myId}`; msg = '個別チャットに招待します👇'; } 
+      else if (chatMode === 'room') { inviteUrl = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(currentRoomId)}`; msg = `ルーム「${currentRoomId}」に招待します👇`; } 
+      else if (chatMode === 'global') return alert('全体チャットはURLを使わずに誰でも入室できます！');
       openShareModal('このチャットに招待', msg, inviteUrl);
     });
 
-    // 3. チャット画面右上の「📤 (履歴エクスポート)」
     document.getElementById('shareChatBtn').addEventListener('click', () => {
       const msgs = document.querySelectorAll('#msgArea .msg-row');
       if (msgs.length === 0) return alert('共有するメッセージがありません。');
       let exportText = `【${document.getElementById('chatTitle').textContent}】のチャット履歴\n\n`;
       msgs.forEach(row => {
-        const isMine = row.classList.contains('mine');
-        const nameNode = row.querySelector('.sender-name');
-        const name = isMine ? myName : (nameNode ? nameNode.textContent : '相手');
-        const text = row.querySelector('.msg').textContent;
+        const isMine = row.classList.contains('mine'); const nameNode = row.querySelector('.sender-name');
+        const name = isMine ? myName : (nameNode ? nameNode.textContent : '相手'); const text = row.querySelector('.msg').textContent;
         exportText += `${name}: ${text}\n`;
       });
       openShareModal('履歴を共有', exportText, '');
     });
 
-    // 4. メッセージ単体をタップして「共有」
     document.getElementById('menuShare').addEventListener('click', () => {
-      openShareModal('メッセージを共有', selectedText, '');
-      document.getElementById('contextMenu').style.display = 'none';
+      openShareModal('メッセージを共有', selectedText, ''); document.getElementById('contextMenu').style.display = 'none';
     });
 
-    // その他のタップメニュー処理
     document.getElementById('menuCopy').addEventListener('click', () => {
-      if(navigator.clipboard) { navigator.clipboard.writeText(selectedText).then(() => alert('コピーしました')); }
+      if(navigator.clipboard) navigator.clipboard.writeText(selectedText).then(() => alert('コピーしました'));
       document.getElementById('contextMenu').style.display = 'none';
     });
 
     document.getElementById('menuSearch').addEventListener('click', () => {
-      window.open('https://www.google.com/search?q=' + encodeURIComponent(selectedText), '_blank');
-      document.getElementById('contextMenu').style.display = 'none';
+      window.open('https://www.google.com/search?q=' + encodeURIComponent(selectedText), '_blank'); document.getElementById('contextMenu').style.display = 'none';
     });
     
     document.getElementById('menuReply').addEventListener('click', () => {
-      const input = document.getElementById('chatTextInput');
-      input.value = `> ${selectedText}\n` + input.value;
-      input.focus();
+      const input = document.getElementById('chatTextInput'); input.value = `> ${selectedText}\n` + input.value; input.focus();
       document.getElementById('contextMenu').style.display = 'none';
     });
 
     document.getElementById('menuAddFriend').addEventListener('click', () => {
       if (selectedSenderId && selectedSenderId !== myId && selectedSenderId !== 'システム') {
-        document.getElementById('friendIdInput').value = selectedSenderId;
-        document.getElementById('addFriendBtn').click();
+        document.getElementById('friendIdInput').value = selectedSenderId; document.getElementById('addFriendBtn').click();
       } else { alert('追加できません。'); }
       document.getElementById('contextMenu').style.display = 'none';
     });
-
   </script>
 </body>
 </html>
