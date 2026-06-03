@@ -3,18 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>チャット＆ビデオ通話アプリ</title>
+  <title>チャット＆ビデオ通話アプリ(100人対応版)</title>
+  <script src="https://meet.jit.si/external_api.js"></script>
   <style>
     /* ＝＝＝ 全体の基本設定 ＝＝＝ */
     body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
-    .app-container { width: 95%; max-width: 800px; height: 95vh; background-color: #fff; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); position: relative; overflow: hidden; }
-    .screen { display: none; flex-direction: column; height: 100%; }
+    .app-container { width: 95%; max-width: 800px; height: 95vh; background-color: #fff; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); position: relative; overflow: hidden; display: flex; flex-direction: column; }
+    .screen { display: none; flex-direction: column; height: 100%; flex: 1; }
     .screen.active { display: flex; }
     .header { background-color: #075e54; color: white; padding: 15px 20px; text-align: center; font-size: 18px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; z-index: 5; }
 
     /* ＝＝＝ 各画面のレイアウト ＝＝＝ */
     .weather-widget { font-size: 14px; font-weight: normal; background: rgba(0,0,0,0.2); padding: 5px 10px; border-radius: 15px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
-    .content-area { padding: 30px 20px; display: flex; flex-direction: column; align-items: center; gap: 15px; overflow-y: auto; }
+    .content-area { padding: 30px 20px; display: flex; flex-direction: column; align-items: center; gap: 15px; overflow-y: auto; flex: 1; }
     .section-box { width: 100%; max-width: 500px; background: #f9f9f9; border-radius: 10px; padding: 20px; box-sizing: border-box; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 15px; }
     .input-label { text-align: left; font-size: 14px; color: #333; font-weight: bold; margin-bottom: 5px; width: 80%; margin-left: auto; margin-right: auto; }
     .text-input { padding: 15px; width: 80%; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; margin-bottom: 15px; box-sizing: border-box; }
@@ -40,7 +41,7 @@
     .msg-row.mine { flex-direction: row-reverse; }
     .msg-wrapper { display: flex; flex-direction: column; max-width: 65%; }
     .msg-wrapper.mine { align-items: flex-end; }
-    .sender-name { font-size: 12px; color: #666; margin-bottom: 4px; margin-left: 5px; font-weight: bold; }
+    .sender-name { font-size: 12px; color: #666; margin-bottom: 4px; margin-left: 5px; margin-right: 5px; font-weight: bold; }
     .msg { padding: 12px 15px; border-radius: 15px; font-size: 16px; line-height: 1.4; word-wrap: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.15); }
     .msg.my-msg { background-color: #dcf8c6; border-top-right-radius: 0; }
     .msg.bot-msg { background-color: #fff; border-top-left-radius: 0; }
@@ -57,15 +58,13 @@
     .friend-id { font-size: 18px; font-weight: bold; color: #333; }
     .delete-btn { background-color: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold;}
 
-    /* ＝＝＝ ビデオ通話画面 ＝＝＝ */
+    /* ＝＝＝ 個人ビデオ通話画面 ＝＝＝ */
     .call-theme { background-color: #2c3e50; color: white; justify-content: space-between; padding-bottom: 30px; }
     .video-container { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; gap: 15px; padding: 10px; position: relative; }
-    /* 自分と相手のビデオを並べる */
     .videos-wrapper { display: flex; width: 100%; justify-content: center; gap: 10px; height: 50vh; }
     .video-box { width: 48%; background-color: #000; border-radius: 12px; overflow: hidden; position: relative; border: 2px solid #555; }
     .video-box video { width: 100%; height: 100%; object-fit: cover; }
-    .video-box.mine video { transform: scaleX(-1); /* 自分のカメラは反転 */ }
-    /* 画面共有時は反転を戻すためのクラス */
+    .video-box.mine video { transform: scaleX(-1); }
     .video-box.mine.sharing video { transform: none; }
     .video-label { position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.6); padding: 5px 10px; border-radius: 5px; font-size: 14px; }
     
@@ -81,6 +80,9 @@
     .inc-btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; }
     .btn-answer { background: #27ae60; }
     .btn-reject { background: #c0392b; }
+    
+    /* 全体通話画面用 */
+    #jitsiContainer { flex: 1; width: 100%; background: #000; }
   </style>
 </head>
 <body>
@@ -88,7 +90,6 @@
   <div class="app-container" id="appContainer">
     <div id="notification" class="notification"></div>
     
-    <!-- 着信ポップアップ -->
     <div id="incomingCallAlert" class="incoming-call-alert">
       <div>📞 <span id="incomingCallerName"></span>さんから着信中...</div>
       <div class="incoming-btns">
@@ -97,13 +98,12 @@
       </div>
     </div>
 
-    <!-- 1. 初期設定画面 -->
     <div id="loginScreen" class="screen active">
       <div class="header">
         <div id="weatherLogin" class="weather-widget">☁️ --℃</div>
         <span>🔑 初期設定</span><div style="width: 70px;"></div>
       </div>
-      <div class="content-area" style="justify-content: center; height: 100%;">
+      <div class="content-area" style="justify-content: center;">
         <div class="section-box">
           <h2>アプリへようこそ</h2>
           <div class="input-label">プロフィール画像（タップで選択）</div>
@@ -118,7 +118,6 @@
       </div>
     </div>
 
-    <!-- 2. ホーム画面 -->
     <div id="homeScreen" class="screen">
       <div class="header">
         <div id="weatherHome" class="weather-widget">☁️ --℃</div>
@@ -146,7 +145,6 @@
       </div>
     </div>
 
-    <!-- 3. 友達リスト -->
     <div id="friendsScreen" class="screen">
       <div class="header" style="background-color: #34495e;">
         <button id="backFromFriendsBtn" class="back-btn">◀ 戻る</button>
@@ -155,12 +153,12 @@
       <div class="content-area" id="friendsListArea"></div>
     </div>
 
-    <!-- 4. チャット画面 -->
     <div id="chatScreen" class="screen">
       <div class="header">
         <button id="backBtn" class="back-btn">◀ 戻る</button>
         <span id="chatTitle">チャット</span>
-        <button id="startCallBtn" class="header-icon-btn" title="ビデオ通話">📹</button>
+        <button id="startCallBtn" class="header-icon-btn" title="個人ビデオ通話">📹</button>
+        <button id="startGlobalCallBtn" class="header-icon-btn" title="100人全体通話" style="display:none; font-size: 26px;">🌍📞</button>
       </div>
       <div class="messages" id="msgArea"></div>
       <div class="chat-input-area">
@@ -169,7 +167,6 @@
       </div>
     </div>
 
-    <!-- 5. ビデオ通話画面 -->
     <div id="inCallScreen" class="screen call-theme">
       <div class="header" style="background: transparent;">
         <span style="visibility: hidden;">◀</span>
@@ -199,12 +196,18 @@
       </div>
     </div>
 
+    <div id="globalCallScreen" class="screen call-theme">
+      <div id="jitsiContainer"></div>
+      <div style="padding: 15px; background: #2c3e50; text-align: center;">
+        <button id="endGlobalCallBtn" class="call-btn-circle btn-red" title="全体通話から退出" style="margin: 0 auto;">☎</button>
+      </div>
+    </div>
+
   </div>
 
-  <!-- Firebase & WebRTC ロジック -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, setDoc, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, setDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
     // --- Firebase 初期化 ---
     const firebaseConfig = {
@@ -223,19 +226,12 @@
     let currentFriendId = '', chatMode = 'private', currentRoomId = '';
     let chatUnsubscribe = null, incomingCallUnsubscribe = null;
 
-    // --- WebRTC 用変数 ---
-    let localStream = null;
-    let remoteStream = null;
-    let peerConnection = null;
-    let isScreenSharing = false;
-    let screenStream = null;
-    
-    // Googleの無料STUNサーバーを利用
-    const configuration = {
-      iceServers: [
-        { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }
-      ]
-    };
+    // WebRTC用 (個人通話)
+    let localStream = null, remoteStream = null, peerConnection = null, isScreenSharing = false, screenStream = null;
+    const configuration = { iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }] };
+
+    // Jitsi用 (全体通話)
+    let jitsiApi = null;
 
     // --- 画面要素の取得 ---
     const screens = {
@@ -243,7 +239,8 @@
       home: document.getElementById('homeScreen'),
       friends: document.getElementById('friendsScreen'),
       chat: document.getElementById('chatScreen'),
-      call: document.getElementById('inCallScreen')
+      call: document.getElementById('inCallScreen'),
+      globalCall: document.getElementById('globalCallScreen')
     };
     function showScreen(screenName) {
       Object.values(screens).forEach(s => s.classList.remove('active'));
@@ -251,40 +248,77 @@
     }
 
     // ==========================================
-    // 基本機能 (プロフィール・チャット)
+    // 基本機能 (プロフィール設定・チャット)
     // ==========================================
     function getSafeData(key, def) { try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : def; } catch (e) { return def; } }
+
+    function setIconDisplay(element, iconValue) {
+      if (iconValue && iconValue.startsWith('data:image')) { element.style.backgroundImage = `url(${iconValue})`; element.textContent = ''; } 
+      else { element.style.backgroundImage = 'none'; element.textContent = iconValue || '👤'; }
+    }
+
+    function processImage(file, callback) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const size = 120; canvas.width = size; canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          let min = Math.min(img.width, img.height);
+          let sx = (img.width - min) / 2; let sy = (img.height - min) / 2;
+          ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+          callback(canvas.toDataURL('image/jpeg', 0.8));
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
     
     window.onload = () => {
       const sName = localStorage.getItem('chatApp_MyName'), sId = localStorage.getItem('chatApp_MyId'), sIcon = localStorage.getItem('chatApp_MyIcon');
       if (sName && sId) {
         myName = sName; myId = sId; myIconData = sIcon || '👤';
         document.getElementById('displayMyName').textContent = myName; document.getElementById('displayMyId').textContent = myId;
+        setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
         showScreen('home');
-        listenForIncomingCalls(); // ホーム画面に行ったら着信を待機
+        listenForIncomingCalls();
       }
     };
+
+    document.getElementById('iconPreview').addEventListener('click', () => document.getElementById('myIconUpload').click());
+    document.getElementById('myIconUpload').addEventListener('change', (e) => {
+      processImage(e.target.files[0], (dataUrl) => { myIconData = dataUrl; setIconDisplay(document.getElementById('iconPreview'), myIconData); });
+    });
 
     document.getElementById('loginBtn').addEventListener('click', () => {
       const n = document.getElementById('myNameInput').value.trim(), id = document.getElementById('myIdInput').value.trim();
       if (!n || !id) return alert('入力してください');
       myName = n; myId = id;
-      localStorage.setItem('chatApp_MyName', myName); localStorage.setItem('chatApp_MyId', myId);
+      localStorage.setItem('chatApp_MyName', myName); localStorage.setItem('chatApp_MyId', myId); localStorage.setItem('chatApp_MyIcon', myIconData);
       document.getElementById('displayMyName').textContent = myName; document.getElementById('displayMyId').textContent = myId;
+      setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
       showScreen('home');
       listenForIncomingCalls();
     });
 
+    // --- チャット処理 ---
     document.getElementById('globalChatBtn').addEventListener('click', () => {
-      chatMode = 'global'; showScreen('chat'); document.getElementById('chatTitle').textContent = '🌍 全体チャット';
-      document.getElementById('startCallBtn').style.display = 'none'; // 全体チャットは通話不可
+      chatMode = 'global'; showScreen('chat'); 
+      document.getElementById('chatTitle').textContent = '🌍 全体チャット';
+      // 通話ボタンの切り替え（全体用を表示）
+      document.getElementById('startCallBtn').style.display = 'none';
+      document.getElementById('startGlobalCallBtn').style.display = 'block';
       subscribeToChatRoom('global_room');
     });
 
     function startPrivateChat(friendId) {
       currentFriendId = friendId; chatMode = 'private'; showScreen('chat'); 
       document.getElementById('chatTitle').textContent = friendId;
+      // 通話ボタンの切り替え（個人用を表示）
       document.getElementById('startCallBtn').style.display = 'block';
+      document.getElementById('startGlobalCallBtn').style.display = 'none';
       currentRoomId = [myId, friendId].sort().join('_');
       subscribeToChatRoom(currentRoomId);
     }
@@ -297,22 +331,22 @@
         snapshot.docChanges().forEach((change) => {
           if (change.type === "added") {
             const data = change.doc.data();
-            renderMessage(data.text, data.senderId === myId, data.senderName);
+            renderMessage(data.text, data.senderId === myId, data.senderName, data.senderIcon);
           }
         });
       });
     }
 
-    function renderMessage(text, isMine, senderName) {
+    function renderMessage(text, isMine, senderName, senderIcon) {
       const msgArea = document.getElementById('msgArea');
-      const div = document.createElement('div');
-      div.className = `msg-row ${isMine ? 'mine' : ''}`;
-      div.innerHTML = `<div class="msg-wrapper ${isMine ? 'mine' : 'other'}">
-                         ${!isMine ? `<div class="sender-name">${senderName}</div>` : ''}
-                         <div class="msg ${isMine ? 'my-msg' : 'bot-msg'}">${text}</div>
-                       </div>`;
-      msgArea.appendChild(div);
-      msgArea.scrollTop = msgArea.scrollHeight;
+      const div = document.createElement('div'); div.className = `msg-row ${isMine ? 'mine' : 'other'}`;
+      const iconDiv = document.createElement('div'); iconDiv.className = 'chat-icon'; setIconDisplay(iconDiv, senderIcon);
+      const wrapper = document.createElement('div'); wrapper.className = `msg-wrapper ${isMine ? 'mine' : 'other'}`;
+      
+      if (!isMine) { const nameDiv = document.createElement('div'); nameDiv.className = 'sender-name'; nameDiv.textContent = senderName; wrapper.appendChild(nameDiv); }
+      const msgDiv = document.createElement('div'); msgDiv.className = `msg ${isMine ? 'my-msg' : 'bot-msg'}`; msgDiv.textContent = text;
+      wrapper.appendChild(msgDiv); div.appendChild(iconDiv); div.appendChild(wrapper);
+      msgArea.appendChild(div); msgArea.scrollTop = msgArea.scrollHeight;
     }
 
     document.getElementById('sendBtn').addEventListener('click', async () => {
@@ -320,18 +354,16 @@
       if (!text) return;
       document.getElementById('chatTextInput').value = '';
       const roomId = chatMode === 'global' ? 'global_room' : currentRoomId;
-      await addDoc(collection(db, "rooms", roomId, "messages"), { text, senderId: myId, senderName: myName, createdAt: Date.now() });
+      await addDoc(collection(db, "rooms", roomId, "messages"), { text, senderId: myId, senderName: myName, senderIcon: myIconData, createdAt: Date.now() });
     });
 
     document.getElementById('backBtn').addEventListener('click', () => { showScreen('home'); });
-
-    // 友達追加・リスト機能
     document.getElementById('openFriendsBtn').addEventListener('click', () => {
       showScreen('friends'); const area = document.getElementById('friendsListArea'); area.innerHTML = '';
       const friends = getSafeData('chatApp_Friends', []);
       friends.forEach(f => {
         const d = document.createElement('div'); d.className = 'friend-item';
-        d.innerHTML = `<div class="friend-info"><div class="friend-id">${f}</div></div>`;
+        d.innerHTML = `<div class="friend-info"><div class="chat-icon">👤</div><div class="friend-id">${f}</div></div>`;
         d.onclick = () => startPrivateChat(f);
         area.appendChild(d);
       });
@@ -345,56 +377,73 @@
     });
 
     // ==========================================
-    // WebRTC ビデオ通話機能 (Firestore Signaling)
+    // 🌟 100人全体通話機能 (Jitsi Meet 連携)
     // ==========================================
+    document.getElementById('startGlobalCallBtn').addEventListener('click', () => {
+      showScreen('globalCall');
+      const domain = 'meet.jit.si';
+      const options = {
+        roomName: 'Sabopennet_Global_Room_100_Users', // 全体共通の部屋名
+        parentNode: document.querySelector('#jitsiContainer'),
+        userInfo: {
+          displayName: myName // 自分の名前をセット
+        },
+        configOverwrite: {
+          startWithAudioMuted: true, // 最初はマイクOFFで入室（ハウリング対策）
+          startWithVideoMuted: true  // 最初はカメラOFF
+        }
+      };
+      jitsiApi = new JitsiMeetExternalAPI(domain, options);
+    });
 
-    // メディア（カメラ・マイク）の取得
+    document.getElementById('endGlobalCallBtn').addEventListener('click', () => {
+      if (jitsiApi) {
+        jitsiApi.dispose(); // Jitsiを破棄
+        jitsiApi = null;
+      }
+      showScreen('chat'); // チャットに戻る
+    });
+
+    // ==========================================
+    // 個人ビデオ通話機能 (WebRTC フルスクラッチ)
+    // ==========================================
     async function openUserMedia() {
       try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         document.getElementById('localVideo').srcObject = localStream;
         document.getElementById('localVideoBox').classList.remove('sharing');
       } catch (error) {
-        console.error('メディアの取得に失敗:', error);
         alert('カメラ・マイクの使用が許可されていません。\n(ローカルサーバーまたはHTTPS環境が必要です)');
         throw error;
       }
     }
 
-    // 相手からの着信を監視する
     function listenForIncomingCalls() {
       if (incomingCallUnsubscribe) return;
-      // 自分が関係する「全ルーム」の着信を監視するのは複雑なので、
-      // 簡単のため、自分のIDを名前にしたドキュメント宛の着信を監視します。
       const myCallRef = doc(db, "calls", myId);
       incomingCallUnsubscribe = onSnapshot(myCallRef, (docSnap) => {
         const data = docSnap.data();
         if (data && data.offer && !data.answer) {
-          // 着信！
           document.getElementById('incomingCallerName').textContent = data.callerName;
           document.getElementById('incomingCallAlert').style.display = 'flex';
           
-          // 出るボタン
           document.getElementById('answerCallBtn').onclick = () => {
             document.getElementById('incomingCallAlert').style.display = 'none';
             currentFriendId = data.callerId;
             currentRoomId = [myId, data.callerId].sort().join('_');
             answerCall(myCallRef, data.offer);
           };
-          // 拒否ボタン
           document.getElementById('rejectCallBtn').onclick = () => {
             document.getElementById('incomingCallAlert').style.display = 'none';
-            deleteDoc(myCallRef); // データを消して拒否
+            deleteDoc(myCallRef);
           };
         } else if (!data) {
-          // 通話が切断された場合など
           document.getElementById('incomingCallAlert').style.display = 'none';
           if(screens.call.classList.contains('active')) hangUp();
         }
       });
     }
 
-    // 発信ボタンを押した時 (Caller)
     document.getElementById('startCallBtn').addEventListener('click', async () => {
       showScreen('call');
       document.getElementById('inCallNameDisplay').textContent = currentFriendId;
@@ -403,57 +452,37 @@
       
       await openUserMedia();
       peerConnection = new RTCPeerConnection(configuration);
-      
-      // ローカルの映像・音声を接続に追加
       localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
       
-      // 相手の映像を受け取る準備
       peerConnection.ontrack = event => {
         remoteStream = event.streams[0];
         document.getElementById('remoteVideo').srcObject = remoteStream;
       };
 
-      // シグナリング情報の保存先（相手のID宛に書き込む）
       const callDocRef = doc(db, "calls", currentFriendId);
-      const callerCandidatesCollection = collection(callDocRef, "callerCandidates");
-      const calleeCandidatesCollection = collection(callDocRef, "calleeCandidates");
-
-      // 経路情報(ICE)の収集
       peerConnection.onicecandidate = event => {
-        if (event.candidate) addDoc(callerCandidatesCollection, event.candidate.toJSON());
+        if (event.candidate) addDoc(collection(callDocRef, "callerCandidates"), event.candidate.toJSON());
       };
 
-      // オファー(招待状)を作成してFirestoreに保存
       const offer = await peerConnection.createOffer();
       await peerConnection.setLocalDescription(offer);
-      await setDoc(callDocRef, {
-        offer: { type: offer.type, sdp: offer.sdp },
-        callerId: myId,
-        callerName: myName
-      });
+      await setDoc(callDocRef, { offer: { type: offer.type, sdp: offer.sdp }, callerId: myId, callerName: myName });
 
-      // 相手がアンサー(返答)を書き込むのを待つ
       onSnapshot(callDocRef, (snapshot) => {
         const data = snapshot.data();
         if (!peerConnection.currentRemoteDescription && data?.answer) {
-          const answerDescription = new RTCSessionDescription(data.answer);
-          peerConnection.setRemoteDescription(answerDescription);
+          peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
           document.getElementById('callStatusText').textContent = '通話中';
         }
       });
 
-      // 相手の経路情報(ICE)を受け取る
-      onSnapshot(calleeCandidatesCollection, (snapshot) => {
+      onSnapshot(collection(callDocRef, "calleeCandidates"), (snapshot) => {
         snapshot.docChanges().forEach((change) => {
-          if (change.type === "added") {
-            const candidate = new RTCIceCandidate(change.doc.data());
-            peerConnection.addIceCandidate(candidate);
-          }
+          if (change.type === "added") peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
         });
       });
     });
 
-    // 着信に応答する時 (Callee)
     async function answerCall(callDocRef, offerData) {
       showScreen('call');
       document.getElementById('inCallNameDisplay').textContent = currentFriendId;
@@ -462,7 +491,6 @@
 
       await openUserMedia();
       peerConnection = new RTCPeerConnection(configuration);
-
       localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 
       peerConnection.ontrack = event => {
@@ -470,113 +498,73 @@
         document.getElementById('remoteVideo').srcObject = remoteStream;
       };
 
-      const callerCandidatesCollection = collection(callDocRef, "callerCandidates");
-      const calleeCandidatesCollection = collection(callDocRef, "calleeCandidates");
-
       peerConnection.onicecandidate = event => {
-        if (event.candidate) addDoc(calleeCandidatesCollection, event.candidate.toJSON());
+        if (event.candidate) addDoc(collection(callDocRef, "calleeCandidates"), event.candidate.toJSON());
       };
 
-      // 送られてきたオファーをセット
-      const offerDescription = new RTCSessionDescription(offerData);
-      await peerConnection.setRemoteDescription(offerDescription);
-
-      // アンサーを作成してFirestoreに書き返す
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(offerData));
       const answer = await peerConnection.createAnswer();
       await peerConnection.setLocalDescription(answer);
       await updateDoc(callDocRef, { answer: { type: answer.type, sdp: answer.sdp } });
       
       document.getElementById('callStatusText').textContent = '通話中';
 
-      // 相手の経路情報を受け取る
-      onSnapshot(callerCandidatesCollection, (snapshot) => {
+      onSnapshot(collection(callDocRef, "callerCandidates"), (snapshot) => {
         snapshot.docChanges().forEach((change) => {
-          if (change.type === "added") {
-            const candidate = new RTCIceCandidate(change.doc.data());
-            peerConnection.addIceCandidate(candidate);
-          }
+          if (change.type === "added") peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
         });
       });
     }
 
-    // --- カメラ・マイクのON/OFF制御 ---
     document.getElementById('toggleMicBtn').addEventListener('click', function() {
       if(!localStream) return;
-      const audioTrack = localStream.getAudioTracks()[0];
-      audioTrack.enabled = !audioTrack.enabled;
-      this.classList.toggle('off');
-      this.textContent = audioTrack.enabled ? '🎤' : '🔇';
+      const t = localStream.getAudioTracks()[0]; t.enabled = !t.enabled;
+      this.classList.toggle('off'); this.textContent = t.enabled ? '🎤' : '🔇';
     });
 
     document.getElementById('toggleCamBtn').addEventListener('click', function() {
       if(!localStream) return;
-      const videoTrack = localStream.getVideoTracks()[0];
-      videoTrack.enabled = !videoTrack.enabled;
+      const t = localStream.getVideoTracks()[0]; t.enabled = !t.enabled;
       this.classList.toggle('off');
     });
 
-    // --- 画面共有 (Screen Sharing) ---
     document.getElementById('shareScreenBtn').addEventListener('click', async function() {
       if (!isScreenSharing) {
         try {
-          // 画面のストリームを取得
           screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
           const screenTrack = screenStream.getVideoTracks()[0];
-          
-          // 相手に送っている映像トラックを、画面共有トラックに差し替える
           const sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
           if (sender) sender.replaceTrack(screenTrack);
-          
-          // 自分の画面表示も切り替え
           document.getElementById('localVideo').srcObject = screenStream;
-          document.getElementById('localVideoBox').classList.add('sharing'); // 反転解除
-          
-          isScreenSharing = true;
-          this.style.backgroundColor = '#2ecc71'; // 緑色に変更
-          
-          // 共有を停止した時のイベント
+          document.getElementById('localVideoBox').classList.add('sharing');
+          isScreenSharing = true; this.style.backgroundColor = '#2ecc71';
           screenTrack.onended = () => stopScreenSharing();
-        } catch (e) {
-          console.error("画面共有キャンセル", e);
-        }
-      } else {
-        stopScreenSharing();
-      }
+        } catch (e) {}
+      } else { stopScreenSharing(); }
     });
 
     function stopScreenSharing() {
       if(!isScreenSharing) return;
       const videoTrack = localStream.getVideoTracks()[0];
       const sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
-      if (sender) sender.replaceTrack(videoTrack); // カメラ映像に戻す
-      
+      if (sender) sender.replaceTrack(videoTrack);
       document.getElementById('localVideo').srcObject = localStream;
-      document.getElementById('localVideoBox').classList.remove('sharing'); // 反転を戻す
-      
+      document.getElementById('localVideoBox').classList.remove('sharing');
       if(screenStream) screenStream.getTracks().forEach(t => t.stop());
-      isScreenSharing = false;
-      document.getElementById('shareScreenBtn').style.backgroundColor = '#8e44ad';
+      isScreenSharing = false; document.getElementById('shareScreenBtn').style.backgroundColor = '#8e44ad';
     }
 
-    // --- 通話終了 ---
     async function hangUp() {
       if (peerConnection) { peerConnection.close(); peerConnection = null; }
       if (localStream) { localStream.getTracks().forEach(track => track.stop()); localStream = null; }
       if (screenStream) { screenStream.getTracks().forEach(track => track.stop()); screenStream = null; }
-      document.getElementById('localVideo').srcObject = null;
-      document.getElementById('remoteVideo').srcObject = null;
-      
-      // 自分が発信者の場合や、通話中のドキュメントを削除
+      document.getElementById('localVideo').srcObject = null; document.getElementById('remoteVideo').srcObject = null;
       if (myId && currentFriendId) {
-        await deleteDoc(doc(db, "calls", currentFriendId)).catch(e=>{});
-        await deleteDoc(doc(db, "calls", myId)).catch(e=>{});
+        await deleteDoc(doc(db, "calls", currentFriendId)).catch(e=>{}); await deleteDoc(doc(db, "calls", myId)).catch(e=>{});
       }
-      
       showScreen('chat');
-      // ボタン類のリセット
       document.getElementById('toggleMicBtn').classList.remove('off'); document.getElementById('toggleMicBtn').textContent = '🎤';
-      document.getElementById('toggleCamBtn').classList.remove('off');
-      document.getElementById('shareScreenBtn').style.backgroundColor = '#8e44ad';
+      document.getElementById('toggleCamBtn').classList.remove('off'); document.getElementById('shareScreenBtn').style.backgroundColor = '#8e44ad';
       isScreenSharing = false;
     }
 
