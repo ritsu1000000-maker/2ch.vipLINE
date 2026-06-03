@@ -330,10 +330,11 @@
       currentFriendId = id; 
       friendIdInput.value = '';
       
+      // 【修正】相手から通知が来るのではなく、追加完了のお知らせに変更
       setTimeout(() => {
         notification.classList.add('show');
-        notification.innerHTML = `📩 <b>${currentFriendId}</b> さんから通知です！<br><span style="font-size: 14px;">(タップしてチャットを開く)</span>`;
-      }, 1000);
+        notification.innerHTML = `✅ <b>${currentFriendId}</b> を友達に追加しました！<br><span style="font-size: 14px;">(タップしてトークを開始)</span>`;
+      }, 500); // 1000から500に短縮し、より早く表示されるように
     });
 
     notification.addEventListener('click', () => {
