@@ -32,7 +32,7 @@
     /* プロフィール表示エリア */
     .my-profile-display { background-color: #e5ddd5; padding: 15px 40px; border-radius: 20px; text-align: center; border: 2px solid #075e54; display: inline-block; margin-bottom: 10px; position: relative; }
     .profile-name { font-size: 22px; font-weight: bold; color: #333; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-    .profile-id { font-size: 14px; color: #666; }
+    .profile-id { font-size: 16px; color: #555; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: bold; }
     .warning-text { color: #d32f2f; font-size: 12px; font-weight: bold; margin-top: -5px; margin-bottom: 15px; }
     .edit-name-btn { background-color: #34495e; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; }
     .edit-name-btn:hover { background-color: #2c3e50; }
@@ -40,8 +40,6 @@
     /* ＝＝＝ 共通アイコンスタイル ＝＝＝ */
     .chat-icon { width: 45px; height: 45px; border-radius: 50%; background-color: #bdc3c7; background-size: cover; background-position: center; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 2px solid #fff; }
     .profile-icon-large { width: 80px; height: 80px; font-size: 40px; margin: 0 auto 10px auto; }
-
-    /* ★追加: カメラアイコン装飾 */
     .camera-badge { position: absolute; bottom: 10px; right: 0; background: #34495e; color: white; border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); pointer-events: none; border: 2px solid #fff; }
 
     /* ＝＝＝ 通知とチャット画面 ＝＝＝ */
@@ -117,7 +115,7 @@
       <div class="content-area" style="justify-content: center; height: 100%;">
         <div class="section-box">
           <h2>アプリへようこそ</h2>
-          <p class="warning-text">※一度登録するとブラウザに記憶されます<br>（IDは後から変更できません）</p>
+          <p class="warning-text">※一度登録するとブラウザに記憶されます<br>（名前もIDも後から変更可能です）</p>
           
           <div class="input-label">プロフィール画像（任意）</div>
           <div id="iconPreview" class="chat-icon profile-icon-large">👤</div>
@@ -153,7 +151,10 @@
             <span id="displayMyName"></span>
             <button id="editNameBtn" class="edit-name-btn">✎ 変更</button>
           </div>
-          <div class="profile-id">ID: <span id="displayMyId"></span></div>
+          <div class="profile-id">
+            ID: <span id="displayMyId"></span>
+            <button id="editIdBtn" class="edit-name-btn">✎ 変更</button>
+          </div>
         </div>
         
         <div class="section-box" style="border-left: 5px solid #e67e22;">
@@ -260,10 +261,11 @@
     let chatMode = 'private';
     let selectedText = '';
     
-    const notificationSound = new Audio();
+    // ★マリオのコイン音を初期設定で読み込むように変更（同じフォルダに coin05.mp3 がある前提）
+    const notificationSound = new Audio('coin05.mp3');
     notificationSound.volume = 0.5;
 
-    // 音声アップロード
+    // 音声アップロード（任意で他の音に変えたい場合）
     document.getElementById('audioUpload').addEventListener('change', function(e) {
       if (e.target.files[0]) notificationSound.src = URL.createObjectURL(e.target.files[0]);
     });
@@ -280,7 +282,7 @@
         const img = new Image();
         img.onload = function() {
           const canvas = document.createElement('canvas');
-          const size = 120; // 120x120ピクセルに縮小して保存（重くならないように）
+          const size = 120;
           canvas.width = size; canvas.height = size;
           const ctx = canvas.getContext('2d');
           
@@ -296,7 +298,6 @@
       reader.readAsDataURL(file);
     }
 
-    // アイコンを画面にセットする便利関数
     function setIconDisplay(element, iconValue) {
       if (iconValue && iconValue.startsWith('data:image')) {
         element.style.backgroundImage = `url(${iconValue})`;
@@ -315,7 +316,7 @@
       });
     });
 
-    // ★追加: ホーム画面でのアイコン変更機能
+    // ホーム画面でのアイコン変更機能
     document.getElementById('homeIconChangeBtn').addEventListener('click', () => {
       document.getElementById('homeIconUploadHidden').click();
     });
@@ -325,7 +326,6 @@
         localStorage.setItem('chatApp_MyIcon', myIconData);
         setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
         
-        // 全体ユーザーリスト上の自分のデータも更新する
         let allUsers = getSafeData('chatApp_Users_v2', []);
         let me = allUsers.find(u => u.id === myId);
         if (me) {
@@ -382,7 +382,6 @@
       localStorage.setItem('chatApp_MyId', myId);
       localStorage.setItem('chatApp_MyIcon', myIconData);
 
-      // 自分を全体ユーザーリストに登録
       allUsers.push({ id: myId, name: myName, icon: myIconData });
       localStorage.setItem('chatApp_Users_v2', JSON.stringify(allUsers));
       
@@ -391,6 +390,51 @@
       setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
       
       loginScreen.classList.remove('active'); homeScreen.classList.add('active');
+    });
+
+    // ★追加: ホーム画面での名前変更処理
+    document.getElementById('editNameBtn').addEventListener('click', () => {
+      const newName = prompt('新しい表示名を入力してください', myName);
+      if (newName !== null && newName.trim() !== '') {
+        myName = newName.trim();
+        localStorage.setItem('chatApp_MyName', myName);
+        document.getElementById('displayMyName').textContent = myName;
+        
+        // 全体ユーザーリストの自分の名前も更新
+        let allUsers = getSafeData('chatApp_Users_v2', []);
+        let me = allUsers.find(u => u.id === myId);
+        if (me) {
+          me.name = myName;
+          localStorage.setItem('chatApp_Users_v2', JSON.stringify(allUsers));
+        }
+      }
+    });
+
+    // ★追加: ホーム画面でのID変更処理
+    document.getElementById('editIdBtn').addEventListener('click', () => {
+      const newId = prompt('新しいユーザーIDを入力してください（重複不可）', myId);
+      if (newId !== null && newId.trim() !== '' && newId.trim() !== myId) {
+        const trimmedId = newId.trim();
+        let allUsers = getSafeData('chatApp_Users_v2', []);
+        
+        // 重複チェック
+        if (allUsers.find(u => u.id === trimmedId)) {
+          alert('そのIDはすでに使われています！別のIDを指定してください。');
+          return;
+        }
+
+        // 全体ユーザーリストの自分のIDを更新
+        let meIndex = allUsers.findIndex(u => u.id === myId);
+        if (meIndex !== -1) {
+          allUsers[meIndex].id = trimmedId;
+          localStorage.setItem('chatApp_Users_v2', JSON.stringify(allUsers));
+        }
+
+        myId = trimmedId;
+        localStorage.setItem('chatApp_MyId', myId);
+        document.getElementById('displayMyId').textContent = myId;
+        alert('ユーザーIDを変更しました！');
+      }
     });
 
     // ＝＝＝ 3. 友達追加とリスト ＝＝＝
