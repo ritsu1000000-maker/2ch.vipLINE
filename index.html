@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>チャット＆ビデオ通話アプリ(100人対応版)</title>
+  <title>チャット＆ビデオ通話アプリ(完全版)</title>
+  <!-- Jitsi Meet API (100人通話用) の読み込み -->
   <script src="https://meet.jit.si/external_api.js"></script>
   <style>
     /* ＝＝＝ 全体の基本設定 ＝＝＝ */
@@ -23,15 +24,15 @@
     .action-btn { background-color: #128C7E; color: white; border: none; padding: 12px 25px; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; width: 80%; transition: background-color 0.2s; }
     .action-btn:hover { background-color: #0b7366; }
     .global-btn { background-color: #e67e22; }
-    .purple-btn { background-color: #8e44ad; }
 
     /* プロフィールとアイコン */
     .my-profile-display { background-color: #e5ddd5; padding: 15px 40px; border-radius: 20px; text-align: center; border: 2px solid #075e54; display: inline-block; margin-bottom: 10px; position: relative; }
-    .profile-name { font-size: 22px; font-weight: bold; color: #333; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .profile-name { font-size: 22px; font-weight: bold; color: #333; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; }
     .profile-id { font-size: 14px; color: #666; }
-    .edit-name-btn { background-color: #34495e; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; }
+    .edit-name-btn { background-color: #34495e; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: bold; margin: 0 5px; }
     .chat-icon { width: 45px; height: 45px; border-radius: 50%; background-color: #bdc3c7; background-size: cover; background-position: center; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 2px solid #fff; }
-    .profile-icon-large { width: 80px; height: 80px; font-size: 40px; margin: 0 auto 10px auto; cursor: pointer; }
+    .profile-icon-large { width: 80px; height: 80px; font-size: 40px; margin: 0 auto 10px auto; cursor: pointer; transition: opacity 0.2s; }
+    .profile-icon-large:hover { opacity: 0.8; }
 
     /* ＝＝＝ チャット画面 ＝＝＝ */
     .notification { position: absolute; top: -100px; left: 50%; transform: translateX(-50%); background-color: #25D366; color: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); width: 70%; text-align: center; font-size: 16px; font-weight: bold; cursor: pointer; transition: top 0.4s ease-in-out; z-index: 1000; }
@@ -90,6 +91,7 @@
   <div class="app-container" id="appContainer">
     <div id="notification" class="notification"></div>
     
+    <!-- 着信ポップアップ -->
     <div id="incomingCallAlert" class="incoming-call-alert">
       <div>📞 <span id="incomingCallerName"></span>さんから着信中...</div>
       <div class="incoming-btns">
@@ -98,6 +100,7 @@
       </div>
     </div>
 
+    <!-- 1. 初期設定画面 -->
     <div id="loginScreen" class="screen active">
       <div class="header">
         <div id="weatherLogin" class="weather-widget">☁️ --℃</div>
@@ -107,7 +110,7 @@
         <div class="section-box">
           <h2>アプリへようこそ</h2>
           <div class="input-label">プロフィール画像（タップで選択）</div>
-          <div id="iconPreview" class="chat-icon profile-icon-large">👤</div>
+          <div id="iconPreview" class="chat-icon profile-icon-large" title="画像をタップして変更">👤</div>
           <input type="file" id="myIconUpload" accept="image/*" style="display: none;">
           <div class="input-label" style="margin-top: 15px;">表示名</div>
           <input type="text" id="myNameInput" class="text-input" placeholder="例: 太郎">
@@ -118,6 +121,7 @@
       </div>
     </div>
 
+    <!-- 2. ホーム画面 -->
     <div id="homeScreen" class="screen">
       <div class="header">
         <div id="weatherHome" class="weather-widget">☁️ --℃</div>
@@ -125,8 +129,14 @@
       </div>
       <div class="content-area">
         <div class="my-profile-display">
-          <div id="homeMyIcon" class="chat-icon profile-icon-large">👤</div>
-          <div class="profile-name"><span id="displayMyName"></span> <button id="editNameBtn" class="edit-name-btn">✎ 変更</button></div>
+          <div id="homeMyIcon" class="chat-icon profile-icon-large" title="画像をタップして変更">👤</div>
+          <div class="profile-name"><span id="displayMyName"></span></div>
+          
+          <div style="margin-bottom: 10px;">
+            <button id="editNameBtn" class="edit-name-btn">✎ 名前変更</button>
+            <button id="editIconBtn" class="edit-name-btn" style="background-color: #8e44ad;">🖼 画像変更</button>
+          </div>
+
           <div class="profile-id">ID: <span id="displayMyId"></span></div>
           <input type="file" id="changeIconUpload" accept="image/*" style="display: none;">
         </div>
@@ -145,6 +155,7 @@
       </div>
     </div>
 
+    <!-- 3. 友達リスト -->
     <div id="friendsScreen" class="screen">
       <div class="header" style="background-color: #34495e;">
         <button id="backFromFriendsBtn" class="back-btn">◀ 戻る</button>
@@ -153,6 +164,7 @@
       <div class="content-area" id="friendsListArea"></div>
     </div>
 
+    <!-- 4. チャット画面 -->
     <div id="chatScreen" class="screen">
       <div class="header">
         <button id="backBtn" class="back-btn">◀ 戻る</button>
@@ -167,39 +179,33 @@
       </div>
     </div>
 
+    <!-- 5. 個人ビデオ通話画面 -->
     <div id="inCallScreen" class="screen call-theme">
       <div class="header" style="background: transparent;">
         <span style="visibility: hidden;">◀</span>
         <span id="inCallNameDisplay" style="font-size:24px;">相手の名前</span>
         <span style="visibility: hidden;">📹</span>
       </div>
-      
       <div class="video-container">
         <div class="videos-wrapper">
-          <div class="video-box mine" id="localVideoBox">
-            <video id="localVideo" autoplay muted playsinline></video>
-            <div class="video-label">あなた</div>
-          </div>
-          <div class="video-box">
-            <video id="remoteVideo" autoplay playsinline></video>
-            <div class="video-label" id="remoteVideoLabel">相手</div>
-          </div>
+          <div class="video-box mine" id="localVideoBox"><video id="localVideo" autoplay muted playsinline></video><div class="video-label">あなた</div></div>
+          <div class="video-box"><video id="remoteVideo" autoplay playsinline></video><div class="video-label" id="remoteVideoLabel">相手</div></div>
         </div>
         <div style="font-size: 18px; color: #bdc3c7;" id="callStatusText">接続中...</div>
       </div>
-
       <div class="call-controls">
-        <button id="toggleMicBtn" class="call-btn-circle" title="マイクON/OFF">🎤</button>
-        <button id="toggleCamBtn" class="call-btn-circle" title="カメラON/OFF">📷</button>
-        <button id="shareScreenBtn" class="call-btn-circle" title="画面共有" style="background-color: #8e44ad;">🖥️</button>
-        <button id="endCallBtn" class="call-btn-circle btn-red" title="通話終了">☎</button>
+        <button id="toggleMicBtn" class="call-btn-circle">🎤</button>
+        <button id="toggleCamBtn" class="call-btn-circle">📷</button>
+        <button id="shareScreenBtn" class="call-btn-circle" style="background-color: #8e44ad;">🖥️</button>
+        <button id="endCallBtn" class="call-btn-circle btn-red">☎</button>
       </div>
     </div>
 
+    <!-- 6. 全体通話画面 -->
     <div id="globalCallScreen" class="screen call-theme">
       <div id="jitsiContainer"></div>
       <div style="padding: 15px; background: #2c3e50; text-align: center;">
-        <button id="endGlobalCallBtn" class="call-btn-circle btn-red" title="全体通話から退出" style="margin: 0 auto;">☎</button>
+        <button id="endGlobalCallBtn" class="call-btn-circle btn-red" style="margin: 0 auto;">☎</button>
       </div>
     </div>
 
@@ -209,7 +215,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
     import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, setDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
-    // --- Firebase 初期化 ---
     const firebaseConfig = {
       apiKey: "AIzaSyBCQArL0Q1wDveRywCpet5Nor3PuRYt7fM",
       authDomain: "sabopennet.firebaseapp.com",
@@ -221,35 +226,16 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // --- グローバル変数 ---
     let myName = '', myId = '', myIconData = '👤';
     let currentFriendId = '', chatMode = 'private', currentRoomId = '';
     let chatUnsubscribe = null, incomingCallUnsubscribe = null;
-
-    // WebRTC用 (個人通話)
     let localStream = null, remoteStream = null, peerConnection = null, isScreenSharing = false, screenStream = null;
     const configuration = { iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }] };
-
-    // Jitsi用 (全体通話)
     let jitsiApi = null;
 
-    // --- 画面要素の取得 ---
-    const screens = {
-      login: document.getElementById('loginScreen'),
-      home: document.getElementById('homeScreen'),
-      friends: document.getElementById('friendsScreen'),
-      chat: document.getElementById('chatScreen'),
-      call: document.getElementById('inCallScreen'),
-      globalCall: document.getElementById('globalCallScreen')
-    };
-    function showScreen(screenName) {
-      Object.values(screens).forEach(s => s.classList.remove('active'));
-      screens[screenName].classList.add('active');
-    }
+    const screens = { login: document.getElementById('loginScreen'), home: document.getElementById('homeScreen'), friends: document.getElementById('friendsScreen'), chat: document.getElementById('chatScreen'), call: document.getElementById('inCallScreen'), globalCall: document.getElementById('globalCallScreen') };
+    function showScreen(screenName) { Object.values(screens).forEach(s => s.classList.remove('active')); screens[screenName].classList.add('active'); }
 
-    // ==========================================
-    // 基本機能 (プロフィール設定・チャット)
-    // ==========================================
     function getSafeData(key, def) { try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : def; } catch (e) { return def; } }
 
     function setIconDisplay(element, iconValue) {
@@ -287,6 +273,27 @@
       }
     };
 
+    const triggerIconUpload = () => document.getElementById('changeIconUpload').click();
+    document.getElementById('homeMyIcon').addEventListener('click', triggerIconUpload);
+    document.getElementById('editIconBtn').addEventListener('click', triggerIconUpload);
+
+    document.getElementById('changeIconUpload').addEventListener('change', (e) => {
+      processImage(e.target.files[0], (dataUrl) => {
+        myIconData = dataUrl;
+        setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
+        localStorage.setItem('chatApp_MyIcon', myIconData);
+      });
+    });
+
+    document.getElementById('editNameBtn').addEventListener('click', () => {
+      const newName = prompt('新しい表示名を入力してください:', myName);
+      if (newName && newName.trim() !== '') {
+        myName = newName.trim();
+        document.getElementById('displayMyName').textContent = myName;
+        localStorage.setItem('chatApp_MyName', myName);
+      }
+    });
+
     document.getElementById('iconPreview').addEventListener('click', () => document.getElementById('myIconUpload').click());
     document.getElementById('myIconUpload').addEventListener('change', (e) => {
       processImage(e.target.files[0], (dataUrl) => { myIconData = dataUrl; setIconDisplay(document.getElementById('iconPreview'), myIconData); });
@@ -299,34 +306,27 @@
       localStorage.setItem('chatApp_MyName', myName); localStorage.setItem('chatApp_MyId', myId); localStorage.setItem('chatApp_MyIcon', myIconData);
       document.getElementById('displayMyName').textContent = myName; document.getElementById('displayMyId').textContent = myId;
       setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
-      showScreen('home');
-      listenForIncomingCalls();
+      showScreen('home'); listenForIncomingCalls();
     });
 
-    // --- チャット処理 ---
     document.getElementById('globalChatBtn').addEventListener('click', () => {
-      chatMode = 'global'; showScreen('chat'); 
-      document.getElementById('chatTitle').textContent = '🌍 全体チャット';
-      // 通話ボタンの切り替え（全体用を表示）
-      document.getElementById('startCallBtn').style.display = 'none';
-      document.getElementById('startGlobalCallBtn').style.display = 'block';
+      chatMode = 'global'; showScreen('chat'); document.getElementById('chatTitle').textContent = '🌍 全体チャット';
+      document.getElementById('startCallBtn').style.display = 'none'; document.getElementById('startGlobalCallBtn').style.display = 'block';
       subscribeToChatRoom('global_room');
     });
 
     function startPrivateChat(friendId) {
-      currentFriendId = friendId; chatMode = 'private'; showScreen('chat'); 
-      document.getElementById('chatTitle').textContent = friendId;
-      // 通話ボタンの切り替え（個人用を表示）
-      document.getElementById('startCallBtn').style.display = 'block';
-      document.getElementById('startGlobalCallBtn').style.display = 'none';
-      currentRoomId = [myId, friendId].sort().join('_');
-      subscribeToChatRoom(currentRoomId);
+      currentFriendId = friendId; chatMode = 'private'; showScreen('chat'); document.getElementById('chatTitle').textContent = friendId;
+      document.getElementById('startCallBtn').style.display = 'block'; document.getElementById('startGlobalCallBtn').style.display = 'none';
+      currentRoomId = [myId, friendId].sort().join('_'); subscribeToChatRoom(currentRoomId);
     }
 
+    // 💡 エラー検知機能を追加！
     function subscribeToChatRoom(roomId) {
       if (chatUnsubscribe) chatUnsubscribe();
       document.getElementById('msgArea').innerHTML = '';
       const q = query(collection(db, "rooms", roomId, "messages"), orderBy("createdAt"));
+      
       chatUnsubscribe = onSnapshot(q, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
           if (change.type === "added") {
@@ -334,6 +334,9 @@
             renderMessage(data.text, data.senderId === myId, data.senderName, data.senderIcon);
           }
         });
+      }, (error) => {
+        console.error("チャット読み込みエラー:", error);
+        alert("⚠️ メッセージの読み込みに失敗しました！\nFirebaseの「セキュリティルール」が許可されていない可能性があります。");
       });
     }
 
@@ -342,19 +345,24 @@
       const div = document.createElement('div'); div.className = `msg-row ${isMine ? 'mine' : 'other'}`;
       const iconDiv = document.createElement('div'); iconDiv.className = 'chat-icon'; setIconDisplay(iconDiv, senderIcon);
       const wrapper = document.createElement('div'); wrapper.className = `msg-wrapper ${isMine ? 'mine' : 'other'}`;
-      
       if (!isMine) { const nameDiv = document.createElement('div'); nameDiv.className = 'sender-name'; nameDiv.textContent = senderName; wrapper.appendChild(nameDiv); }
       const msgDiv = document.createElement('div'); msgDiv.className = `msg ${isMine ? 'my-msg' : 'bot-msg'}`; msgDiv.textContent = text;
       wrapper.appendChild(msgDiv); div.appendChild(iconDiv); div.appendChild(wrapper);
       msgArea.appendChild(div); msgArea.scrollTop = msgArea.scrollHeight;
     }
 
+    // 💡 送信エラー検知機能を追加！
     document.getElementById('sendBtn').addEventListener('click', async () => {
       const text = document.getElementById('chatTextInput').value.trim();
-      if (!text) return;
-      document.getElementById('chatTextInput').value = '';
+      if (!text) return; document.getElementById('chatTextInput').value = '';
       const roomId = chatMode === 'global' ? 'global_room' : currentRoomId;
-      await addDoc(collection(db, "rooms", roomId, "messages"), { text, senderId: myId, senderName: myName, senderIcon: myIconData, createdAt: Date.now() });
+      
+      try {
+        await addDoc(collection(db, "rooms", roomId, "messages"), { text, senderId: myId, senderName: myName, senderIcon: myIconData, createdAt: Date.now() });
+      } catch (e) {
+        console.error("送信エラー:", e);
+        alert("⚠️ メッセージの送信に失敗しました！\nFirebaseの「セキュリティルール」が許可されていない可能性があります。");
+      }
     });
 
     document.getElementById('backBtn').addEventListener('click', () => { showScreen('home'); });
@@ -364,8 +372,7 @@
       friends.forEach(f => {
         const d = document.createElement('div'); d.className = 'friend-item';
         d.innerHTML = `<div class="friend-info"><div class="chat-icon">👤</div><div class="friend-id">${f}</div></div>`;
-        d.onclick = () => startPrivateChat(f);
-        area.appendChild(d);
+        d.onclick = () => startPrivateChat(f); area.appendChild(d);
       });
     });
     document.getElementById('backFromFriendsBtn').addEventListener('click', () => showScreen('home'));
@@ -376,46 +383,23 @@
       localStorage.setItem('chatApp_Friends', JSON.stringify(f)); alert('追加しました！');
     });
 
-    // ==========================================
-    // 🌟 100人全体通話機能 (Jitsi Meet 連携)
-    // ==========================================
     document.getElementById('startGlobalCallBtn').addEventListener('click', () => {
       showScreen('globalCall');
       const domain = 'meet.jit.si';
-      const options = {
-        roomName: 'Sabopennet_Global_Room_100_Users', // 全体共通の部屋名
-        parentNode: document.querySelector('#jitsiContainer'),
-        userInfo: {
-          displayName: myName // 自分の名前をセット
-        },
-        configOverwrite: {
-          startWithAudioMuted: true, // 最初はマイクOFFで入室（ハウリング対策）
-          startWithVideoMuted: true  // 最初はカメラOFF
-        }
-      };
+      const options = { roomName: 'Sabopennet_Global_Room_100_Users', parentNode: document.querySelector('#jitsiContainer'), userInfo: { displayName: myName }, configOverwrite: { startWithAudioMuted: true, startWithVideoMuted: true } };
       jitsiApi = new JitsiMeetExternalAPI(domain, options);
     });
 
     document.getElementById('endGlobalCallBtn').addEventListener('click', () => {
-      if (jitsiApi) {
-        jitsiApi.dispose(); // Jitsiを破棄
-        jitsiApi = null;
-      }
-      showScreen('chat'); // チャットに戻る
+      if (jitsiApi) { jitsiApi.dispose(); jitsiApi = null; }
+      showScreen('chat');
     });
 
-    // ==========================================
-    // 個人ビデオ通話機能 (WebRTC フルスクラッチ)
-    // ==========================================
     async function openUserMedia() {
       try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        document.getElementById('localVideo').srcObject = localStream;
-        document.getElementById('localVideoBox').classList.remove('sharing');
-      } catch (error) {
-        alert('カメラ・マイクの使用が許可されていません。\n(ローカルサーバーまたはHTTPS環境が必要です)');
-        throw error;
-      }
+        document.getElementById('localVideo').srcObject = localStream; document.getElementById('localVideoBox').classList.remove('sharing');
+      } catch (error) { alert('カメラ・マイクが許可されていません'); throw error; }
     }
 
     function listenForIncomingCalls() {
@@ -424,150 +408,52 @@
       incomingCallUnsubscribe = onSnapshot(myCallRef, (docSnap) => {
         const data = docSnap.data();
         if (data && data.offer && !data.answer) {
-          document.getElementById('incomingCallerName').textContent = data.callerName;
-          document.getElementById('incomingCallAlert').style.display = 'flex';
-          
-          document.getElementById('answerCallBtn').onclick = () => {
-            document.getElementById('incomingCallAlert').style.display = 'none';
-            currentFriendId = data.callerId;
-            currentRoomId = [myId, data.callerId].sort().join('_');
-            answerCall(myCallRef, data.offer);
-          };
-          document.getElementById('rejectCallBtn').onclick = () => {
-            document.getElementById('incomingCallAlert').style.display = 'none';
-            deleteDoc(myCallRef);
-          };
-        } else if (!data) {
-          document.getElementById('incomingCallAlert').style.display = 'none';
-          if(screens.call.classList.contains('active')) hangUp();
-        }
+          document.getElementById('incomingCallerName').textContent = data.callerName; document.getElementById('incomingCallAlert').style.display = 'flex';
+          document.getElementById('answerCallBtn').onclick = () => { document.getElementById('incomingCallAlert').style.display = 'none'; currentFriendId = data.callerId; currentRoomId = [myId, data.callerId].sort().join('_'); answerCall(myCallRef, data.offer); };
+          document.getElementById('rejectCallBtn').onclick = () => { document.getElementById('incomingCallAlert').style.display = 'none'; deleteDoc(myCallRef); };
+        } else if (!data) { document.getElementById('incomingCallAlert').style.display = 'none'; if(screens.call.classList.contains('active')) hangUp(); }
       });
     }
 
     document.getElementById('startCallBtn').addEventListener('click', async () => {
-      showScreen('call');
-      document.getElementById('inCallNameDisplay').textContent = currentFriendId;
-      document.getElementById('remoteVideoLabel').textContent = currentFriendId;
-      document.getElementById('callStatusText').textContent = '発信中...相手の応答を待っています';
-      
+      showScreen('call'); document.getElementById('inCallNameDisplay').textContent = currentFriendId; document.getElementById('remoteVideoLabel').textContent = currentFriendId; document.getElementById('callStatusText').textContent = '発信中...';
       await openUserMedia();
-      peerConnection = new RTCPeerConnection(configuration);
-      localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-      
-      peerConnection.ontrack = event => {
-        remoteStream = event.streams[0];
-        document.getElementById('remoteVideo').srcObject = remoteStream;
-      };
-
+      peerConnection = new RTCPeerConnection(configuration); localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+      peerConnection.ontrack = event => { remoteStream = event.streams[0]; document.getElementById('remoteVideo').srcObject = remoteStream; };
       const callDocRef = doc(db, "calls", currentFriendId);
-      peerConnection.onicecandidate = event => {
-        if (event.candidate) addDoc(collection(callDocRef, "callerCandidates"), event.candidate.toJSON());
-      };
-
-      const offer = await peerConnection.createOffer();
-      await peerConnection.setLocalDescription(offer);
+      peerConnection.onicecandidate = event => { if (event.candidate) addDoc(collection(callDocRef, "callerCandidates"), event.candidate.toJSON()); };
+      const offer = await peerConnection.createOffer(); await peerConnection.setLocalDescription(offer);
       await setDoc(callDocRef, { offer: { type: offer.type, sdp: offer.sdp }, callerId: myId, callerName: myName });
-
-      onSnapshot(callDocRef, (snapshot) => {
-        const data = snapshot.data();
-        if (!peerConnection.currentRemoteDescription && data?.answer) {
-          peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-          document.getElementById('callStatusText').textContent = '通話中';
-        }
-      });
-
-      onSnapshot(collection(callDocRef, "calleeCandidates"), (snapshot) => {
-        snapshot.docChanges().forEach((change) => {
-          if (change.type === "added") peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
-        });
-      });
+      onSnapshot(callDocRef, (snapshot) => { const data = snapshot.data(); if (!peerConnection.currentRemoteDescription && data?.answer) { peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer)); document.getElementById('callStatusText').textContent = '通話中'; } });
+      onSnapshot(collection(callDocRef, "calleeCandidates"), (snapshot) => { snapshot.docChanges().forEach((change) => { if (change.type === "added") peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data())); }); });
     });
 
     async function answerCall(callDocRef, offerData) {
-      showScreen('call');
-      document.getElementById('inCallNameDisplay').textContent = currentFriendId;
-      document.getElementById('remoteVideoLabel').textContent = currentFriendId;
-      document.getElementById('callStatusText').textContent = '接続中...';
-
+      showScreen('call'); document.getElementById('inCallNameDisplay').textContent = currentFriendId; document.getElementById('remoteVideoLabel').textContent = currentFriendId; document.getElementById('callStatusText').textContent = '接続中...';
       await openUserMedia();
-      peerConnection = new RTCPeerConnection(configuration);
-      localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-      peerConnection.ontrack = event => {
-        remoteStream = event.streams[0];
-        document.getElementById('remoteVideo').srcObject = remoteStream;
-      };
-
-      peerConnection.onicecandidate = event => {
-        if (event.candidate) addDoc(collection(callDocRef, "calleeCandidates"), event.candidate.toJSON());
-      };
-
+      peerConnection = new RTCPeerConnection(configuration); localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+      peerConnection.ontrack = event => { remoteStream = event.streams[0]; document.getElementById('remoteVideo').srcObject = remoteStream; };
+      peerConnection.onicecandidate = event => { if (event.candidate) addDoc(collection(callDocRef, "calleeCandidates"), event.candidate.toJSON()); };
       await peerConnection.setRemoteDescription(new RTCSessionDescription(offerData));
-      const answer = await peerConnection.createAnswer();
-      await peerConnection.setLocalDescription(answer);
-      await updateDoc(callDocRef, { answer: { type: answer.type, sdp: answer.sdp } });
-      
-      document.getElementById('callStatusText').textContent = '通話中';
-
-      onSnapshot(collection(callDocRef, "callerCandidates"), (snapshot) => {
-        snapshot.docChanges().forEach((change) => {
-          if (change.type === "added") peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data()));
-        });
-      });
+      const answer = await peerConnection.createAnswer(); await peerConnection.setLocalDescription(answer);
+      await updateDoc(callDocRef, { answer: { type: answer.type, sdp: answer.sdp } }); document.getElementById('callStatusText').textContent = '通話中';
+      onSnapshot(collection(callDocRef, "callerCandidates"), (snapshot) => { snapshot.docChanges().forEach((change) => { if (change.type === "added") peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data())); }); });
     }
 
-    document.getElementById('toggleMicBtn').addEventListener('click', function() {
-      if(!localStream) return;
-      const t = localStream.getAudioTracks()[0]; t.enabled = !t.enabled;
-      this.classList.toggle('off'); this.textContent = t.enabled ? '🎤' : '🔇';
-    });
-
-    document.getElementById('toggleCamBtn').addEventListener('click', function() {
-      if(!localStream) return;
-      const t = localStream.getVideoTracks()[0]; t.enabled = !t.enabled;
-      this.classList.toggle('off');
-    });
-
+    document.getElementById('toggleMicBtn').addEventListener('click', function() { if(!localStream) return; const t = localStream.getAudioTracks()[0]; t.enabled = !t.enabled; this.classList.toggle('off'); this.textContent = t.enabled ? '🎤' : '🔇'; });
+    document.getElementById('toggleCamBtn').addEventListener('click', function() { if(!localStream) return; const t = localStream.getVideoTracks()[0]; t.enabled = !t.enabled; this.classList.toggle('off'); });
     document.getElementById('shareScreenBtn').addEventListener('click', async function() {
-      if (!isScreenSharing) {
-        try {
-          screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-          const screenTrack = screenStream.getVideoTracks()[0];
-          const sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
-          if (sender) sender.replaceTrack(screenTrack);
-          document.getElementById('localVideo').srcObject = screenStream;
-          document.getElementById('localVideoBox').classList.add('sharing');
-          isScreenSharing = true; this.style.backgroundColor = '#2ecc71';
-          screenTrack.onended = () => stopScreenSharing();
-        } catch (e) {}
-      } else { stopScreenSharing(); }
+      if (!isScreenSharing) { try { screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true }); const screenTrack = screenStream.getVideoTracks()[0]; const sender = peerConnection.getSenders().find(s => s.track.kind === 'video'); if (sender) sender.replaceTrack(screenTrack); document.getElementById('localVideo').srcObject = screenStream; document.getElementById('localVideoBox').classList.add('sharing'); isScreenSharing = true; this.style.backgroundColor = '#2ecc71'; screenTrack.onended = () => stopScreenSharing(); } catch (e) {} } else { stopScreenSharing(); }
     });
-
-    function stopScreenSharing() {
-      if(!isScreenSharing) return;
-      const videoTrack = localStream.getVideoTracks()[0];
-      const sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
-      if (sender) sender.replaceTrack(videoTrack);
-      document.getElementById('localVideo').srcObject = localStream;
-      document.getElementById('localVideoBox').classList.remove('sharing');
-      if(screenStream) screenStream.getTracks().forEach(t => t.stop());
-      isScreenSharing = false; document.getElementById('shareScreenBtn').style.backgroundColor = '#8e44ad';
-    }
-
+    function stopScreenSharing() { if(!isScreenSharing) return; const videoTrack = localStream.getVideoTracks()[0]; const sender = peerConnection.getSenders().find(s => s.track.kind === 'video'); if (sender) sender.replaceTrack(videoTrack); document.getElementById('localVideo').srcObject = localStream; document.getElementById('localVideoBox').classList.remove('sharing'); if(screenStream) screenStream.getTracks().forEach(t => t.stop()); isScreenSharing = false; document.getElementById('shareScreenBtn').style.backgroundColor = '#8e44ad'; }
     async function hangUp() {
       if (peerConnection) { peerConnection.close(); peerConnection = null; }
       if (localStream) { localStream.getTracks().forEach(track => track.stop()); localStream = null; }
       if (screenStream) { screenStream.getTracks().forEach(track => track.stop()); screenStream = null; }
       document.getElementById('localVideo').srcObject = null; document.getElementById('remoteVideo').srcObject = null;
-      if (myId && currentFriendId) {
-        await deleteDoc(doc(db, "calls", currentFriendId)).catch(e=>{}); await deleteDoc(doc(db, "calls", myId)).catch(e=>{});
-      }
-      showScreen('chat');
-      document.getElementById('toggleMicBtn').classList.remove('off'); document.getElementById('toggleMicBtn').textContent = '🎤';
-      document.getElementById('toggleCamBtn').classList.remove('off'); document.getElementById('shareScreenBtn').style.backgroundColor = '#8e44ad';
-      isScreenSharing = false;
+      if (myId && currentFriendId) { await deleteDoc(doc(db, "calls", currentFriendId)).catch(e=>{}); await deleteDoc(doc(db, "calls", myId)).catch(e=>{}); }
+      showScreen('chat'); document.getElementById('toggleMicBtn').classList.remove('off'); document.getElementById('toggleMicBtn').textContent = '🎤'; document.getElementById('toggleCamBtn').classList.remove('off'); document.getElementById('shareScreenBtn').style.backgroundColor = '#8e44ad'; isScreenSharing = false;
     }
-
     document.getElementById('endCallBtn').addEventListener('click', hangUp);
 
   </script>
