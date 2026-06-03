@@ -3,172 +3,160 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VIP Chat</title>
+  <title>VIP Chat App</title>
   <style>
-    body { font-family: sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-    .app-container { width: 100%; max-width: 500px; height: 95vh; background-color: #fff; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); position: relative; overflow: hidden; display: flex; flex-direction: column; }
-    .screen { display: none; flex-direction: column; height: 100%; }
-    .screen.active { display: flex; }
-    .header { background-color: #075e54; color: white; padding: 15px; text-align: center; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
-    .content-area { padding: 20px; overflow-y: auto; flex: 1; }
+    /* ＝＝＝ 全体のレイアウト ＝＝＝ */
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background-color: #e5ddd5; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    .app-container { width: 100%; max-width: 400px; height: 90vh; background: #fff; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; border-radius: 20px; }
+
+    /* ＝＝＝ 各パーツのデザイン ＝＝＝ */
+    .header { background: #075e54; color: white; padding: 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+    .content { padding: 20px; flex: 1; overflow-y: auto; }
+    .card { background: #f9f9f9; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eee; }
     
-    /* プロフィール */
-    .profile-section { background: #e5ddd5; padding: 20px; text-align: center; border-bottom: 2px solid #075e54; }
-    .avatar { width: 80px; height: 80px; border-radius: 50%; background: #bdc3c7; margin: 0 auto 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 40px; overflow: hidden; }
+    input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; }
+    button { width: 100%; padding: 12px; border: none; border-radius: 8px; background: #128c7e; color: white; font-weight: bold; cursor: pointer; }
+    button:hover { background: #0b7366; }
+
+    /* プロフィール・友達リスト */
+    .avatar { width: 80px; height: 80px; border-radius: 50%; background: #ccc; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; }
     .avatar img { width: 100%; height: 100%; object-fit: cover; }
-    
-    /* 友達リスト */
-    .friend-item { background: #fff; padding: 15px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-    
-    /* チャット */
-    .messages { flex: 1; padding: 20px; overflow-y: auto; background: #e5ddd5; display: flex; flex-direction: column; gap: 10px; }
-    .msg-wrapper { max-width: 80%; }
-    .msg-wrapper.mine { align-self: flex-end; }
-    .msg { padding: 10px; border-radius: 10px; background: white; }
-    .my-msg { background: #dcf8c6; }
-    .chat-input { display: flex; padding: 10px; background: #f0f0f0; }
-    input { flex: 1; padding: 10px; border-radius: 20px; border: 1px solid #ccc; outline: none; }
-    button { margin-left: 10px; padding: 10px 20px; border-radius: 20px; border: none; background: #128c7e; color: white; cursor: pointer; }
-    
-    .weather { font-size: 12px; cursor: pointer; }
+    .friend-item { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+    .friend-item:hover { background: #fdfdfd; }
+
+    /* チャット画面 */
+    .msg-area { flex: 1; background: #e5ddd5; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+    .msg { max-width: 80%; padding: 10px 15px; border-radius: 10px; font-size: 14px; }
+    .msg.mine { align-self: flex-end; background: #dcf8c6; }
+    .msg.other { align-self: flex-start; background: #fff; }
   </style>
 </head>
 <body>
 
-  <div class="app-container">
-    <div id="loginScreen" class="screen active">
-      <div class="header"><div id="weatherLogin" class="weather">☁️--</div><span>初期設定</span><div></div></div>
-      <div class="content-area">
-        <input type="text" id="nameInput" placeholder="名前" style="width:100%; margin-bottom:10px; padding:10px; box-sizing:border-box;">
-        <input type="text" id="idInput" placeholder="ID" style="width:100%; margin-bottom:10px; padding:10px; box-sizing:border-box;">
-        <button id="loginBtn" style="width:100%;">登録</button>
-      </div>
-    </div>
-
-    <div id="homeScreen" class="screen">
-      <div class="header"><div id="weatherHome" class="weather">☁️--</div><span>ホーム</span><div></div></div>
-      <div class="profile-section">
-        <div id="avatar" class="avatar">👤</div>
-        <input type="file" id="fileInput" hidden accept="image/*">
-        <div id="dispName" style="font-weight:bold;"></div>
-      </div>
-      <div class="content-area">
-        <h3>友達リスト</h3>
-        <div id="friendList"></div>
-        <div style="margin-top:20px;">
-          <input type="text" id="addId" placeholder="追加するID">
-          <button id="addBtn">追加</button>
-        </div>
-        <button id="globalBtn" style="width:100%; margin-top:20px; background:#e67e22;">全体チャット</button>
-      </div>
-    </div>
-
-    <div id="chatScreen" class="screen">
-      <div class="header">
-        <button id="backBtn" style="background:none;">◀</button>
-        <span id="chatTitle"></span>
-        <button id="callBtn" style="background:none;">📞</button>
-      </div>
-      <div id="msgArea" class="messages"></div>
-      <div class="chat-input">
-        <input type="text" id="chatInput">
-        <button id="sendBtn">送信</button>
+<div class="app-container">
+  <div id="loginScreen" class="screen">
+    <div class="header">ログイン</div>
+    <div class="content">
+      <div class="card">
+        <input type="text" id="nameInput" placeholder="表示名">
+        <input type="text" id="idInput" placeholder="ユーザーID">
+        <button id="loginBtn">はじめる</button>
       </div>
     </div>
   </div>
 
-  <script>
-    // 基本設定・状態管理
-    const screens = document.querySelectorAll('.screen');
-    const show = (s) => { screens.forEach(sc=>sc.classList.remove('active')); s.classList.add('active'); };
-    
-    let myName = localStorage.getItem('chatApp_MyName') || '';
-    let myId = localStorage.getItem('chatApp_MyId') || '';
-    let friends = JSON.parse(localStorage.getItem('chatApp_Friends') || '[]');
+  <div id="homeScreen" class="screen" style="display:none;">
+    <div class="header">
+      <span>VIP Chat</span>
+      <span id="weather">☁️--</span>
+    </div>
+    <div class="content">
+      <div class="card" style="text-align:center;">
+        <div id="avatar" class="avatar">👤</div>
+        <input type="file" id="fileInput" hidden accept="image/*">
+        <div id="dispName" style="font-weight:bold;"></div>
+      </div>
+      <h3>友達リスト</h3>
+      <div id="friendList" class="card"></div>
+      <input type="text" id="addId" placeholder="友達のIDを入力">
+      <button id="addBtn">追加</button>
+      <button id="globalBtn" style="margin-top:10px; background:#e67e22;">全体チャット</button>
+    </div>
+  </div>
 
-    // アイコン・初期化
-    const avatar = document.getElementById('avatar');
-    const fileInput = document.getElementById('fileInput');
-    avatar.onclick = () => fileInput.click();
-    fileInput.onchange = (e) => {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        localStorage.setItem('chatApp_MyIcon', ev.target.result);
-        avatar.innerHTML = `<img src="${ev.target.result}">`;
-      };
-      reader.readAsDataURL(e.target.files[0]);
-    };
+  <div id="chatScreen" class="screen" style="display:none;">
+    <div class="header">
+      <button id="backBtn" style="width:auto;">◀</button>
+      <span id="chatTitle"></span>
+      <button id="callBtn" style="width:auto;">📞</button>
+    </div>
+    <div id="msgArea" class="msg-area"></div>
+    <div style="padding:10px; display:flex;">
+      <input type="text" id="chatInput" placeholder="メッセージ...">
+      <button id="sendBtn" style="width:auto; margin-left:5px;">送信</button>
+    </div>
+  </div>
+</div>
 
+<script>
+  /* ＝＝＝ 1. 状態管理 ＝＝＝ */
+  let myName = localStorage.getItem('chatApp_MyName') || '';
+  let friends = JSON.parse(localStorage.getItem('chatApp_Friends') || '[]');
+
+  /* ＝＝＝ 2. 画面切り替え ＝＝＝ */
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+    document.getElementById(id).style.display = 'flex';
+  }
+
+  /* ＝＝＝ 3. アプリ初期化 ＝＝＝ */
+  window.onload = () => {
     if(myName) {
       document.getElementById('dispName').textContent = myName;
-      if(localStorage.getItem('chatApp_MyIcon')) avatar.innerHTML = `<img src="${localStorage.getItem('chatApp_MyIcon')}">`;
-      show(document.getElementById('homeScreen'));
+      show('homeScreen');
+      renderFriends();
+      updateWeather();
+    } else {
+      show('loginScreen');
+    }
+  };
+
+  /* ＝＝＝ 4. 各機能のロジック ＝＝＝ */
+  // ログイン
+  document.getElementById('loginBtn').onclick = () => {
+    localStorage.setItem('chatApp_MyName', document.getElementById('nameInput').value);
+    location.reload();
+  };
+
+  // 友達追加
+  document.getElementById('addBtn').onclick = () => {
+    const id = document.getElementById('addId').value;
+    if(id && !friends.includes(id)) {
+      friends.push(id);
+      localStorage.setItem('chatApp_Friends', JSON.stringify(friends));
       renderFriends();
     }
+  };
 
-    document.getElementById('loginBtn').onclick = () => {
-      myName = document.getElementById('nameInput').value;
-      myId = document.getElementById('idInput').value;
-      localStorage.setItem('chatApp_MyName', myName);
-      localStorage.setItem('chatApp_MyId', myId);
-      location.reload();
-    };
+  function renderFriends() {
+    const list = document.getElementById('friendList');
+    list.innerHTML = '';
+    friends.forEach(id => {
+      const div = document.createElement('div');
+      div.className = 'friend-item';
+      div.innerHTML = `<span>${id}</span> <span>＞</span>`;
+      div.onclick = () => startChat(id);
+      list.appendChild(div);
+    });
+  }
 
-    // 友達管理
-    function renderFriends() {
-      const list = document.getElementById('friendList');
-      list.innerHTML = '';
-      friends.forEach(id => {
-        const div = document.createElement('div');
-        div.className = 'friend-item';
-        div.innerHTML = `<span>${id}</span><span>💬</span>`;
-        div.onclick = () => startChat(id);
-        list.appendChild(div);
-      });
+  // チャット
+  function startChat(title) {
+    document.getElementById('chatTitle').textContent = title;
+    show('chatScreen');
+  }
+
+  document.getElementById('backBtn').onclick = () => show('homeScreen');
+  document.getElementById('sendBtn').onclick = () => {
+    const input = document.getElementById('chatInput');
+    if(input.value) {
+      const div = document.createElement('div');
+      div.className = 'msg mine';
+      div.textContent = input.value;
+      document.getElementById('msgArea').appendChild(div);
+      input.value = '';
     }
+  };
 
-    document.getElementById('addBtn').onclick = () => {
-      const id = document.getElementById('addId').value;
-      if(id && !friends.includes(id)) {
-        friends.push(id);
-        localStorage.setItem('chatApp_Friends', JSON.stringify(friends));
-        renderFriends();
-        document.getElementById('addId').value = '';
-      }
-    };
-
-    // チャット
-    function startChat(title) {
-      document.getElementById('chatTitle').textContent = title;
-      document.getElementById('msgArea').innerHTML = '';
-      show(document.getElementById('chatScreen'));
-    }
-
-    document.getElementById('sendBtn').onclick = () => {
-      const input = document.getElementById('chatInput');
-      if(input.value) {
-        const div = document.createElement('div');
-        div.className = 'msg-wrapper mine';
-        div.innerHTML = `<div class="msg my-msg">${input.value}</div>`;
-        document.getElementById('msgArea').appendChild(div);
-        input.value = '';
-      }
-    };
-
-    document.getElementById('backBtn').onclick = () => show(document.getElementById('homeScreen'));
-    document.getElementById('globalBtn').onclick = () => startChat('全体チャット');
-
-    // 天気
-    async function updateWeather() {
-      try {
-        const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=35.6983&longitude=139.9822&current_weather=true');
-        const data = await res.json();
-        const t = data.current_weather.temperature;
-        document.getElementById('weatherLogin').textContent = `☁️${t}℃`;
-        document.getElementById('weatherHome').textContent = `☁️${t}℃`;
-      } catch(e){}
-    }
-    updateWeather();
-  </script>
+  // 天気取得
+  async function updateWeather() {
+    try {
+      const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=35.69&longitude=139.69&current_weather=true');
+      const data = await res.json();
+      document.getElementById('weather').textContent = `☁️${data.current_weather.temperature}℃`;
+    } catch(e){}
+  }
+</script>
 </body>
 </html>
