@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>チャット（完全オンライン版）</title>
+  <title>チャット（ハイブリッド版）</title>
   <style>
     /* ＝＝＝ 全体の基本設定 ＝＝＝ */
     body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
@@ -225,10 +225,19 @@
 
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
   <script>
-    const socket = io();
+    let socket = null;
+    
+    // 2. サーバーが動いていれば接続、動いていなくてもエラーで停止させない！
+    try {
+      if (typeof io !== 'undefined') {
+        socket = io("http://localhost:3000", { transports: ['websocket', 'polling'] });
+      }
+    } catch (e) {
+      console.warn("オフラインモードで動作中");
+    }
 
     function getSafeData(key, defaultData) {
       try {
@@ -268,7 +277,7 @@
     let chatMode = 'private';
     let selectedText = '';
     let selectedSenderId = '';
-    let pendingInviteId = null; // ★追加：URLから読み取った招待ID
+    let pendingInviteId = null;
     
     const notificationSound = new Audio('coin05.mp3');
     notificationSound.volume = 0.5;
@@ -334,9 +343,7 @@
       });
     });
 
-    // ★ URLSearchParams による起動時の処理 ★
     window.onload = () => {
-      // URLから ?friend=相手のID を読み取る
       const urlParams = new URLSearchParams(window.location.search);
       pendingInviteId = urlParams.get('friend');
 
@@ -359,7 +366,6 @@
         
         loginScreen.classList.remove('active');
         
-        // 招待リンクから来た場合は、自動で友達追加してチャットを開く
         if (pendingInviteId && pendingInviteId !== myId) {
           addFriendAndStartChat(pendingInviteId);
         } else {
@@ -368,7 +374,6 @@
       }
     };
 
-    // 友達追加してチャットを開始する共通関数
     function addFriendAndStartChat(friendId) {
       let allUsers = getSafeData('chatApp_Users_v2', []);
       if (!allUsers.find(u => u.id === friendId)) {
@@ -382,20 +387,15 @@
         localStorage.setItem('chatApp_Friends', JSON.stringify(friends)); 
       }
       
-      // URLのパラメータを綺麗にする（リロード時の再反応を防ぐ）
       window.history.replaceState({}, document.title, window.location.pathname);
-      
       startPrivateChat(friendId);
     }
 
-    // ★ 招待URLをコピーするボタンの処理 ★
     document.getElementById('copyInviteLinkBtn').addEventListener('click', () => {
-      // 現在のURL（http://localhost:3000/ など）に ?friend=自分のID を付与
       const inviteUrl = `${window.location.origin}${window.location.pathname}?friend=${myId}`;
-      
       if (navigator.clipboard) {
         navigator.clipboard.writeText(inviteUrl).then(() => {
-          alert('招待URLをコピーしました！LINEやTwitterで相手に送ってください。\n\n' + inviteUrl);
+          alert('招待URLをコピーしました！\n\n' + inviteUrl);
         });
       } else {
         prompt('以下のURLをコピーして相手に送ってください', inviteUrl);
@@ -432,7 +432,6 @@
       
       loginScreen.classList.remove('active'); 
       
-      // ログイン直後も、招待リンクがあれば自動でチャット開始
       if (pendingInviteId && pendingInviteId !== myId) {
         addFriendAndStartChat(pendingInviteId);
       } else {
@@ -617,28 +616,40 @@
       addMessage(text, true); 
       document.getElementById('chatTextInput').value = '';
       
-      socket.emit('sendMessage', {
-        text: text,
-        senderId: myId,
-        senderName: myName,
-        senderIcon: myIconData,
-        targetId: chatMode === 'private' ? currentFriendId : 'global',
-        mode: chatMode
-      });
+      // ★ サーバーが繋がっているか確認してから送信する ★
+      if (socket && socket.connected) {
+        socket.emit('sendMessage', {
+          text: text,
+          senderId: myId,
+          senderName: myName,
+          senderIcon: myIconData,
+          targetId: chatMode === 'private' ? currentFriendId : 'global',
+          mode: chatMode
+        });
+      } else {
+        // ★ サーバーに繋がっていない（ファイルを直接開いた）場合は、一人用モードとして動かす ★
+        if (chatMode === 'private') {
+           setTimeout(() => { addMessage(`「${text}」ですね。(※現在オフラインです)`, false, currentFriendId); }, 1000);
+        } else {
+           setTimeout(() => { addMessage(`(※サーバーに未接続のため、他の人には届いていません)`, false, 'システム', '案内役', '🤖'); }, 1000);
+        }
+      }
     }
     document.getElementById('sendBtn').addEventListener('click', handleSend);
     document.getElementById('chatTextInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(); });
     document.addEventListener('click', () => { document.getElementById('contextMenu').style.display = 'none'; });
 
-    socket.on('receiveMessage', (data) => {
-      if (data.senderId === myId) return;
-      if (chatMode === 'global' && data.mode === 'global') {
-         addMessage(data.text, false, data.senderId, data.senderName, data.senderIcon);
-      } 
-      else if (chatMode === 'private' && data.mode === 'private' && data.targetId === myId && currentFriendId === data.senderId) {
-         addMessage(data.text, false, data.senderId, data.senderName, data.senderIcon);
-      }
-    });
+    if (socket) {
+      socket.on('receiveMessage', (data) => {
+        if (data.senderId === myId) return;
+        if (chatMode === 'global' && data.mode === 'global') {
+           addMessage(data.text, false, data.senderId, data.senderName, data.senderIcon);
+        } 
+        else if (chatMode === 'private' && data.mode === 'private' && data.targetId === myId && currentFriendId === data.senderId) {
+           addMessage(data.text, false, data.senderId, data.senderName, data.senderIcon);
+        }
+      });
+    }
 
     let callInterval, callSeconds = 0, callTimeout;
     function formatTime(s) { return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`; }
