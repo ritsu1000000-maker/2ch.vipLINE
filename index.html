@@ -102,6 +102,7 @@
       <div class="menu-item" id="menuAddFriend">👤 友達追加</div>
       <div class="menu-item" id="menuReply">↩️ 返信</div>
       <div class="menu-item" id="menuCopy">📋 コピー</div>
+      <div class="menu-item" id="menuShare">🔗 共有</div>
       <div class="menu-item" id="menuSearch">🔍 Google検索</div>
     </div>
 
@@ -113,10 +114,12 @@
         <span>🔑 初期設定</span>
         <div style="width: 70px;"></div> </div>
       <div class="content-area" style="justify-content: center; height: 100%;">
-        <div class="section-box">
+        <div class="section-box" style="position: relative;">
           <h2>アプリへようこそ</h2>
           <p class="warning-text">※同じIDを入力すると既存アカウントでログインできます</p>
           
+          <div id="inviteMsg" style="display:none; color: #128C7E; font-weight: bold; margin-bottom: 10px;"></div>
+
           <div class="input-label">プロフィール画像（任意）</div>
           <div id="iconPreview" class="chat-icon profile-icon-large">👤</div>
           <input type="file" id="myIconUpload" accept="image/*" class="text-input" style="padding: 10px; font-size: 14px;">
@@ -154,6 +157,8 @@
             ID: <span id="displayMyId"></span>
             <button id="editIdBtn" class="edit-name-btn">✎ 変更</button>
           </div>
+          
+          <button id="copyInviteLinkBtn" class="edit-name-btn" style="margin-top: 10px; background-color: #128C7E; padding: 6px 12px; font-size: 14px;">🔗 自分の招待URLをコピー</button>
         </div>
         
         <div class="section-box" style="border-left: 5px solid #e67e22;">
@@ -192,7 +197,10 @@
       <div class="header">
         <button id="backBtn" class="back-btn">◀ 戻る</button>
         <span id="chatTitle">チャット</span>
-        <button id="startCallBtn" class="header-icon-btn">📞</button>
+        <div>
+          <button id="shareChatBtn" class="header-icon-btn" style="margin-right: 10px; font-size: 20px;" title="履歴を共有">📤</button>
+          <button id="startCallBtn" class="header-icon-btn" title="通話">📞</button>
+        </div>
       </div>
       <div class="messages" id="msgArea"></div>
       <div class="chat-input-area">
@@ -220,7 +228,6 @@
   <script src="/socket.io/socket.io.js"></script>
 
   <script>
-    // ★ サーバーと接続 ★
     const socket = io();
 
     function getSafeData(key, defaultData) {
@@ -259,6 +266,9 @@
     let myIconData = '👤';
     let currentFriendId = '';
     let chatMode = 'private';
+    let selectedText = '';
+    let selectedSenderId = '';
+    let pendingInviteId = null; // ★追加：URLから読み取った招待ID
     
     const notificationSound = new Audio('coin05.mp3');
     notificationSound.volume = 0.5;
@@ -324,7 +334,18 @@
       });
     });
 
+    // ★ URLSearchParams による起動時の処理 ★
     window.onload = () => {
+      // URLから ?friend=相手のID を読み取る
+      const urlParams = new URLSearchParams(window.location.search);
+      pendingInviteId = urlParams.get('friend');
+
+      if (pendingInviteId) {
+        const inviteMsgDiv = document.getElementById('inviteMsg');
+        inviteMsgDiv.textContent = `📢 「${pendingInviteId}」さんから招待されています！ログインしてチャットを始めましょう。`;
+        inviteMsgDiv.style.display = 'block';
+      }
+
       let allUsers = getSafeData('chatApp_Users_v2', []);
       const savedName = localStorage.getItem('chatApp_MyName');
       const savedId = localStorage.getItem('chatApp_MyId');
@@ -335,11 +356,52 @@
         document.getElementById('displayMyName').textContent = myName;
         document.getElementById('displayMyId').textContent = myId;
         setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
-        loginScreen.classList.remove('active'); homeScreen.classList.add('active');
+        
+        loginScreen.classList.remove('active');
+        
+        // 招待リンクから来た場合は、自動で友達追加してチャットを開く
+        if (pendingInviteId && pendingInviteId !== myId) {
+          addFriendAndStartChat(pendingInviteId);
+        } else {
+          homeScreen.classList.add('active');
+        }
       }
     };
 
-    // ★ ログイン・登録（同じIDならログイン） ★
+    // 友達追加してチャットを開始する共通関数
+    function addFriendAndStartChat(friendId) {
+      let allUsers = getSafeData('chatApp_Users_v2', []);
+      if (!allUsers.find(u => u.id === friendId)) {
+        allUsers.push({ id: friendId, name: friendId, icon: '👤' });
+        localStorage.setItem('chatApp_Users_v2', JSON.stringify(allUsers));
+      }
+
+      let friends = getSafeData('chatApp_Friends', []);
+      if (!friends.includes(friendId)) { 
+        friends.push(friendId); 
+        localStorage.setItem('chatApp_Friends', JSON.stringify(friends)); 
+      }
+      
+      // URLのパラメータを綺麗にする（リロード時の再反応を防ぐ）
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      startPrivateChat(friendId);
+    }
+
+    // ★ 招待URLをコピーするボタンの処理 ★
+    document.getElementById('copyInviteLinkBtn').addEventListener('click', () => {
+      // 現在のURL（http://localhost:3000/ など）に ?friend=自分のID を付与
+      const inviteUrl = `${window.location.origin}${window.location.pathname}?friend=${myId}`;
+      
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(inviteUrl).then(() => {
+          alert('招待URLをコピーしました！LINEやTwitterで相手に送ってください。\n\n' + inviteUrl);
+        });
+      } else {
+        prompt('以下のURLをコピーして相手に送ってください', inviteUrl);
+      }
+    });
+
     document.getElementById('loginBtn').addEventListener('click', () => {
       const name = document.getElementById('myNameInput').value.trim();
       const id = document.getElementById('myIdInput').value.trim();
@@ -368,7 +430,14 @@
       document.getElementById('displayMyId').textContent = myId;
       setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
       
-      loginScreen.classList.remove('active'); homeScreen.classList.add('active');
+      loginScreen.classList.remove('active'); 
+      
+      // ログイン直後も、招待リンクがあれば自動でチャット開始
+      if (pendingInviteId && pendingInviteId !== myId) {
+        addFriendAndStartChat(pendingInviteId);
+      } else {
+        homeScreen.classList.add('active');
+      }
     });
 
     document.getElementById('editNameBtn').addEventListener('click', () => {
@@ -517,7 +586,9 @@
       msgDiv.textContent = text;
       
       msgDiv.addEventListener('click', (e) => {
-        e.stopPropagation(); selectedText = text;
+        e.stopPropagation(); 
+        selectedText = text;
+        selectedSenderId = isMine ? myId : senderId;
         const rect = appContainer.getBoundingClientRect();
         let x = e.clientX - rect.left; let y = e.clientY - rect.top;
         if (x + 150 > rect.width) x -= 150;
@@ -539,7 +610,6 @@
       }
     }
 
-    // ★ サーバーへメッセージを送信 ★
     function handleSend() {
       const text = document.getElementById('chatTextInput').value.trim();
       if (text === '') return;
@@ -560,10 +630,8 @@
     document.getElementById('chatTextInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(); });
     document.addEventListener('click', () => { document.getElementById('contextMenu').style.display = 'none'; });
 
-    // ★ サーバーからメッセージを受信 ★
     socket.on('receiveMessage', (data) => {
       if (data.senderId === myId) return;
-
       if (chatMode === 'global' && data.mode === 'global') {
          addMessage(data.text, false, data.senderId, data.senderName, data.senderIcon);
       } 
@@ -572,7 +640,6 @@
       }
     });
 
-    // ＝＝＝ 通話機能 ＝＝＝
     let callInterval, callSeconds = 0, callTimeout;
     function formatTime(s) { return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`; }
     
@@ -597,6 +664,72 @@
     
     document.getElementById('cancelCallBtn').addEventListener('click', () => { clearTimeout(callTimeout); document.getElementById('callingScreen').classList.remove('active'); chatScreen.classList.add('active'); });
     document.getElementById('endCallBtn').addEventListener('click', () => { clearInterval(callInterval); document.getElementById('inCallScreen').classList.remove('active'); chatScreen.classList.add('active'); addMessage(`📞 通話が終了しました（${formatTime(callSeconds)}）`, true); });
+
+    document.getElementById('menuCopy').addEventListener('click', () => {
+      if(navigator.clipboard) {
+        navigator.clipboard.writeText(selectedText).then(() => alert('メッセージをコピーしました！'));
+      } else {
+        prompt('コピーしてください', selectedText);
+      }
+      document.getElementById('contextMenu').style.display = 'none';
+    });
+
+    document.getElementById('menuShare').addEventListener('click', () => {
+      if (navigator.share) {
+        navigator.share({ title: 'メッセージ共有', text: selectedText }).catch(e => console.log('共有がキャンセルされました'));
+      } else {
+        prompt('以下のテキストをコピーして共有してください', selectedText);
+      }
+      document.getElementById('contextMenu').style.display = 'none';
+    });
+
+    document.getElementById('menuSearch').addEventListener('click', () => {
+      window.open('https://www.google.com/search?q=' + encodeURIComponent(selectedText), '_blank');
+      document.getElementById('contextMenu').style.display = 'none';
+    });
+    
+    document.getElementById('menuReply').addEventListener('click', () => {
+      const input = document.getElementById('chatTextInput');
+      input.value = `> ${selectedText}\n` + input.value;
+      input.focus();
+      document.getElementById('contextMenu').style.display = 'none';
+    });
+
+    document.getElementById('menuAddFriend').addEventListener('click', () => {
+      if (selectedSenderId && selectedSenderId !== myId && selectedSenderId !== 'システム') {
+        document.getElementById('friendIdInput').value = selectedSenderId;
+        document.getElementById('addFriendBtn').click();
+      } else {
+        alert('このユーザーは追加できません。');
+      }
+      document.getElementById('contextMenu').style.display = 'none';
+    });
+
+    document.getElementById('shareChatBtn').addEventListener('click', () => {
+      const msgs = document.querySelectorAll('#msgArea .msg-row');
+      if (msgs.length === 0) return alert('共有するメッセージがありません。');
+      
+      let exportText = `【${document.getElementById('chatTitle').textContent}】のチャット履歴\n\n`;
+      msgs.forEach(row => {
+        const isMine = row.classList.contains('mine');
+        const nameNode = row.querySelector('.sender-name');
+        const name = isMine ? myName : (nameNode ? nameNode.textContent : '相手');
+        const text = row.querySelector('.msg').textContent;
+        exportText += `${name}: ${text}\n`;
+      });
+      
+      if (navigator.share) {
+        navigator.share({ title: 'チャット履歴', text: exportText }).catch(err => console.log('共有がキャンセルされました'));
+      } else {
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(exportText).then(() => {
+            alert('チャット履歴をクリップボードにコピーしました！\nそのままLINEなどに貼り付けて共有できます。');
+          }).catch(() => prompt('以下のテキストをコピーしてください', exportText));
+        } else {
+          prompt('以下のテキストをコピーしてください', exportText);
+        }
+      }
+    });
 
   </script>
 </body>
