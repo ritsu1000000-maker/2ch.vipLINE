@@ -1,4 +1,4 @@
-html_content = """<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
@@ -31,11 +31,10 @@ html_content = """<!DOCTYPE html>
     .my-profile-display { background-color: #e5ddd5; padding: 15px 40px; border-radius: 20px; text-align: center; border: 2px solid #075e54; display: inline-block; margin-bottom: 10px; position: relative; }
     
     /* アイコンエリアを画像対応の丸型に修正 */
-    .profile-avatar-area { width: 70px; height: 70px; border-radius: 50%; background-color: #bdc3c7; margin: 0 auto 5px auto; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 40px; transition: transform 0.2s; user-select: none; overflow: hidden; }
+    .profile-avatar-area { width: 70px; height: 70px; border-radius: 50%; background-color: #bdc3c7; margin: 0 auto 10px auto; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 40px; transition: transform 0.2s; user-select: none; overflow: hidden; }
     .profile-avatar-area:hover { transform: scale(1.1); }
     .profile-avatar-area img { width: 100%; height: 100%; object-fit: cover; }
     
-    .profile-avatar-hint { font-size: 10px; color: #666; display: block; margin-top: -3px; margin-bottom: 10px; }
     .profile-name { font-size: 22px; font-weight: bold; color: #333; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 10px; }
     .profile-id { font-size: 14px; color: #666; display: flex; align-items: center; justify-content: center; gap: 10px; }
     .warning-text { color: #2e7d32; font-size: 12px; font-weight: bold; margin-top: -5px; margin-bottom: 15px; }
@@ -123,7 +122,6 @@ html_content = """<!DOCTYPE html>
         <div class="my-profile-display">
           <div id="displayMyIcon" class="profile-avatar-area" title="クリックして画像を変更">👤</div>
           <input type="file" id="iconFileInput" accept="image/*" style="display: none;">
-          <span class="profile-avatar-hint">クリックで画像変更</span>
           
           <div class="profile-name">
             <span id="displayMyName"></span>
@@ -137,13 +135,11 @@ html_content = """<!DOCTYPE html>
         
         <div class="section-box" style="border-left: 5px solid #e67e22;">
           <h3 style="margin-top: 0;">🌍 全体チャット</h3>
-          <p style="font-size: 14px; color: #666;">みんなが集まる広場で話そう！</p>
           <button id="globalChatBtn" class="action-btn global-btn">全体チャットに参加</button>
         </div>
         
         <div class="section-box" style="border-left: 5px solid #128C7E;">
           <h3 style="margin-top: 0;">👤 友達を追加する</h3>
-          <p style="font-size: 14px; color: #666;">相手の「ID」を入力して個別に話す</p>
           <input type="text" id="friendIdInput" class="text-input" placeholder="例: friend_99">
           <button id="addFriendBtn" class="action-btn">IDを追加して話す</button>
         </div>
@@ -186,19 +182,17 @@ html_content = """<!DOCTYPE html>
       const weatherHome = document.getElementById('weatherHome');
       
       try {
-        // APIからデータを取得
         const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=35.6983&longitude=139.9822&current_weather=true');
         const data = await res.json();
         const temp = data.current_weather.temperature;
         const code = data.current_weather.weathercode;
 
-        // 天気コードをアイコンに変換
         let icon = '☁️'; 
-        if (code === 0) icon = '☀️'; // 晴れ
-        else if (code >= 1 && code <= 3) icon = '⛅'; // くもり
-        else if (code >= 51 && code <= 67) icon = '🌧️'; // 雨
-        else if (code >= 71 && code <= 77) icon = '❄️'; // 雪
-        else if (code >= 95) icon = '⚡'; // 雷雨
+        if (code === 0) icon = '☀️'; 
+        else if (code >= 1 && code <= 3) icon = '⛅'; 
+        else if (code >= 51 && code <= 67) icon = '🌧️'; 
+        else if (code >= 71 && code <= 77) icon = '❄️'; 
+        else if (code >= 95) icon = '⚡'; 
 
         const weatherText = `${icon} ${temp}℃`;
         weatherLogin.textContent = weatherText;
@@ -209,15 +203,11 @@ html_content = """<!DOCTYPE html>
       }
     }
 
-    // 起動時に天気を取得
     fetchWeather();
     
-    // 天気ウィジェットをクリックしたときにも更新する
     document.getElementById('weatherLogin').addEventListener('click', fetchWeather);
     document.getElementById('weatherHome').addEventListener('click', fetchWeather);
 
-
-    // ＝＝＝ HTML要素の取得 ＝＝＝
     const appContainer = document.getElementById('appContainer');
     const loginScreen = document.getElementById('loginScreen');
     const homeScreen = document.getElementById('homeScreen');
@@ -235,7 +225,7 @@ html_content = """<!DOCTYPE html>
     const loginBtn = document.getElementById('loginBtn');
     
     const displayMyIcon = document.getElementById('displayMyIcon');
-    const iconFileInput = document.getElementById('iconFileInput'); // 追加
+    const iconFileInput = document.getElementById('iconFileInput');
     const displayMyName = document.getElementById('displayMyName');
     const displayMyId = document.getElementById('displayMyId');
     const editNameBtn = document.getElementById('editNameBtn');
@@ -260,12 +250,11 @@ html_content = """<!DOCTYPE html>
     const menuCopy = document.getElementById('menuCopy');
     const menuSearch = document.getElementById('menuSearch');
 
-    // ＝＝＝ 変数の準備 ＝＝＝
     let myName = '';
     let myId = '';
-    let myIcon = ''; // 画像のデータURL(Base64)用
+    let myIcon = ''; 
     let currentFriendId = '';
-    let chatMode = 'private'; // 'private' or 'global'
+    let chatMode = 'private'; 
     let selectedText = '';
     let selectedSender = '';
     
@@ -273,7 +262,6 @@ html_content = """<!DOCTYPE html>
     let callSeconds = 0;
     let callTimeout;
 
-    // アイコンの表示を更新する補助関数
     function updateIconDisplay() {
       if (myIcon) {
         displayMyIcon.innerHTML = `<img src="${myIcon}" alt="アイコン">`;
@@ -282,7 +270,6 @@ html_content = """<!DOCTYPE html>
       }
     }
 
-    // ＝＝＝ 1. アプリ起動時（データ読み込み） ＝＝＝
     window.onload = () => {
       const savedName = localStorage.getItem('chatApp_MyName');
       const savedId = localStorage.getItem('chatApp_MyId');
@@ -301,7 +288,6 @@ html_content = """<!DOCTYPE html>
       }
     };
 
-    // ＝＝＝ 2. ログイン処理 ＝＝＝
     loginBtn.addEventListener('click', () => {
       const name = myNameInput.value.trim();
       const id = myIdInput.value.trim();
@@ -320,38 +306,32 @@ html_content = """<!DOCTYPE html>
       homeScreen.classList.add('active');
     });
 
-    // ＝＝＝ 3. 名前の変更処理 ＝＝＝
     editNameBtn.addEventListener('click', () => {
       const newName = prompt('新しい表示名を入力してください', myName);
       if (newName !== null && newName.trim() !== '') {
         myName = newName.trim();
         localStorage.setItem('chatApp_MyName', myName);
         displayMyName.textContent = myName;
-        alert('名前を変更しました！');
       }
     });
 
-    // ＝＝＝ 3-2. ユーザーIDの変更処理 ＝＝＝
     editIdBtn.addEventListener('click', () => {
       const newId = prompt('新しいユーザーIDを入力してください', myId);
       if (newId !== null && newId.trim() !== '') {
         myId = newId.trim();
         localStorage.setItem('chatApp_MyId', myId);
         displayMyId.textContent = myId;
-        alert('ユーザーIDを変更しました！');
       }
     });
 
-    // ＝＝＝ 3-3. アイコン（画像アップロード）の変更処理 ＝＝＝
     displayMyIcon.addEventListener('click', () => {
-      iconFileInput.click(); // 隠しinputをクリックしてファイル選択を開く
+      iconFileInput.click(); 
     });
 
     iconFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
 
-      // 画像ファイルかチェック
       if (!file.type.match('image.*')) {
         alert('画像ファイルを選択してください。');
         return;
@@ -359,15 +339,13 @@ html_content = """<!DOCTYPE html>
 
       const reader = new FileReader();
       reader.onload = (event) => {
-        myIcon = event.target.result; // Base64文字列として取得
-        localStorage.setItem('chatApp_MyIcon', myIcon); // ローカルストレージに保存
-        updateIconDisplay(); // 表示を更新
-        alert('アイコン画像を変更しました！');
+        myIcon = event.target.result; 
+        localStorage.setItem('chatApp_MyIcon', myIcon); 
+        updateIconDisplay(); 
       };
       reader.readAsDataURL(file);
     });
 
-    // ＝＝＝ 4. 全体チャットへの参加 ＝＝＝
     globalChatBtn.addEventListener('click', () => {
       chatMode = 'global';
       homeScreen.classList.remove('active'); 
@@ -377,7 +355,6 @@ html_content = """<!DOCTYPE html>
       addMessage('【システム】全体チャットルームに入室しました！', false, 'システム');
     });
 
-    // ＝＝＝ 5. 友達追加と通知 ＝＝＝
     addFriendBtn.addEventListener('click', () => {
       const id = friendIdInput.value.trim();
       if (id === '') { alert('相手のIDを入力してください！'); return; }
@@ -400,7 +377,7 @@ html_content = """<!DOCTYPE html>
       chatTitle.textContent = `👤 ${currentFriendId}`; 
       msgArea.innerHTML = '';
       
-      addMessage(`こんにちは、${myName}さん！通話ボタンを押すと電話がかかってくるシミュレーションができますよ。`, false, currentFriendId);
+      addMessage(`こんにちは、${myName}さん！`, false, currentFriendId);
     });
 
     backBtn.addEventListener('click', () => {
@@ -408,7 +385,6 @@ html_content = """<!DOCTYPE html>
       homeScreen.classList.add('active');
     });
 
-    // ＝＝＝ 6. メッセージ表示機能（タップメニュー連携） ＝＝＝
     function addMessage(text, isMine, senderName = '') {
       const wrapper = document.createElement('div');
       wrapper.classList.add('msg-wrapper');
@@ -426,7 +402,6 @@ html_content = """<!DOCTYPE html>
       div.classList.add(isMine ? 'my-msg' : 'bot-msg');
       div.textContent = text;
       
-      // メッセージをタップしたときの処理
       div.addEventListener('click', (e) => {
         e.stopPropagation();
         selectedText = text; 
@@ -447,7 +422,6 @@ html_content = """<!DOCTYPE html>
       msgArea.scrollTop = msgArea.scrollHeight;
     }
 
-    // ＝＝＝ 7. メッセージ送信処理 ＝＝＝
     function handleSend() {
       const text = chatTextInput.value.trim();
       if (text === '') return;
@@ -465,7 +439,6 @@ html_content = """<!DOCTYPE html>
     sendBtn.addEventListener('click', handleSend);
     chatTextInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(); });
 
-    // ＝＝＝ 8. タップメニューの動作 ＝＝＝
     document.addEventListener('click', () => { contextMenu.style.display = 'none'; });
 
     menuAddFriend.addEventListener('click', (e) => {
@@ -474,7 +447,7 @@ html_content = """<!DOCTYPE html>
       else if (selectedSender === 'システム' || selectedSender === '') { alert('このユーザーは追加できません。'); } 
       else {
         chatScreen.classList.remove('active'); homeScreen.classList.add('active');
-        friendIdInput.value = selectedSender; alert(`${selectedSender} を友達追加欄にセットしました！`);
+        friendIdInput.value = selectedSender;
       }
     });
 
@@ -485,7 +458,7 @@ html_content = """<!DOCTYPE html>
 
     menuCopy.addEventListener('click', (e) => {
       e.stopPropagation(); contextMenu.style.display = 'none';
-      navigator.clipboard.writeText(selectedText).then(() => { alert('コピーしました！'); }).catch(() => { alert('コピーに失敗しました。'); });
+      navigator.clipboard.writeText(selectedText);
     });
 
     menuSearch.addEventListener('click', (e) => {
@@ -493,7 +466,6 @@ html_content = """<!DOCTYPE html>
       window.open(`https://www.google.com/search?q=${encodeURIComponent(selectedText)}`, '_blank');
     });
 
-    // ＝＝＝ 9. 通話機能（シミュレーション） ＝＝＝
     function formatTime(seconds) {
       const m = Math.floor(seconds / 60).toString().padStart(2, '0');
       const s = (seconds % 60).toString().padStart(2, '0');
@@ -501,10 +473,7 @@ html_content = """<!DOCTYPE html>
     }
 
     startCallBtn.addEventListener('click', () => {
-      if (chatMode === 'global') {
-        alert('全体チャットでは通話できません！1対1のチャットを開いてください。');
-        return;
-      }
+      if (chatMode === 'global') { return; }
       
       chatScreen.classList.remove('active');
       callingScreen.classList.add('active');
@@ -539,8 +508,4 @@ html_content = """<!DOCTYPE html>
 
   </script>
 </body>
-</html>"""
-
-with open("index-v2.html", "w", encoding="utf-8") as f:
-    f.write(html_content)
-print("File generated successfully.")
+</html>
