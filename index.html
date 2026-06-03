@@ -42,12 +42,19 @@
     .msg-wrapper { display: flex; flex-direction: column; max-width: 65%; }
     .msg-wrapper.mine { align-items: flex-end; }
     .sender-name { font-size: 12px; color: #666; margin-bottom: 4px; margin-left: 5px; margin-right: 5px; font-weight: bold; }
-    .msg { padding: 12px 15px; border-radius: 15px; font-size: 16px; line-height: 1.4; word-wrap: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.15); }
+    .msg { padding: 12px 15px; border-radius: 15px; font-size: 16px; line-height: 1.4; word-wrap: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.15); display: flex; flex-direction: column; }
     .msg.my-msg { background-color: #dcf8c6; border-top-right-radius: 0; }
     .msg.bot-msg { background-color: #fff; border-top-left-radius: 0; }
-    .chat-input-area { display: flex; padding: 15px; background-color: #f0f0f0; }
+    
+    /* 追加: 画像と時刻のスタイル */
+    .msg img.chat-image { max-width: 100%; max-height: 250px; border-radius: 8px; object-fit: contain; }
+    .msg-time { font-size: 11px; color: #888; text-align: right; margin-top: 5px; }
+
+    .chat-input-area { display: flex; padding: 15px; background-color: #f0f0f0; align-items: center; gap: 10px; }
+    #imageSendBtn { background: none; border: none; font-size: 24px; cursor: pointer; padding: 5px; transition: transform 0.2s; }
+    #imageSendBtn:active { transform: scale(0.9); }
     #chatTextInput { flex: 1; padding: 15px; border: none; border-radius: 25px; outline: none; font-size: 16px; }
-    #sendBtn { background-color: #128C7E; color: white; border: none; padding: 15px 25px; margin-left: 10px; border-radius: 25px; cursor: pointer; font-size: 16px; font-weight: bold; }
+    #sendBtn { background-color: #128C7E; color: white; border: none; padding: 15px 25px; border-radius: 25px; cursor: pointer; font-size: 16px; font-weight: bold; }
     .back-btn { background: none; border: none; color: white; font-size: 18px; cursor: pointer; }
     .header-icon-btn { background: none; border: none; color: white; font-size: 22px; cursor: pointer; margin-left: 10px; }
 
@@ -211,10 +218,14 @@
         </div>
       </div>
       <div class="messages" id="msgArea"></div>
+      
       <div class="chat-input-area">
+        <button id="imageSendBtn" title="画像/GIFを送信">🖼️</button>
+        <input type="file" id="chatImageInput" accept="image/*,image/gif" style="display: none;">
         <input type="text" id="chatTextInput" placeholder="メッセージを入力...">
         <button id="sendBtn">送信</button>
       </div>
+
     </div>
 
     <div id="inCallScreen" class="screen call-theme">
@@ -309,7 +320,6 @@
       catch (e) { console.error("プロフィール保存エラー:", e); }
     }
 
-    // 友達検索・追加用の処理
     async function processUrlFriend(fId) {
       if (!fId) return;
       if (fId === myId) return alert("自分のIDです");
@@ -347,7 +357,6 @@
       window.history.replaceState({}, document.title, window.location.pathname);
     }
 
-    // 【追加】ルームURL(?room=xxx)を開いた時の処理
     function processUrlRoom(roomId) {
       if (!roomId) return;
       chatMode = (roomId === 'global_room') ? 'global' : 'group';
@@ -360,7 +369,6 @@
         document.getElementById('chatTitle').textContent = `🚪 ルーム: ${roomId}`;
       }
       
-      // ルームの場合は1対1通話ボタンを消し、全体(Jitsi)通話ボタンを表示
       document.getElementById('startCallBtn').style.display = 'none';
       document.getElementById('startGlobalCallBtn').style.display = 'block';
       
@@ -419,7 +427,7 @@
     window.onload = () => {
       const params = new URLSearchParams(window.location.search);
       const friendIdFromUrl = params.get('friend');
-      const roomFromUrl = params.get('room'); // 【追加】ルームのパラメータ
+      const roomFromUrl = params.get('room'); 
 
       const sName = localStorage.getItem('chatApp_MyName'), sId = localStorage.getItem('chatApp_MyId'), sIcon = localStorage.getItem('chatApp_MyIcon');
       
@@ -465,7 +473,6 @@
       }
     });
 
-    // 【変更】ホーム画面からは「友達追加用のQR」のみを表示
     document.getElementById('showQrBtn').addEventListener('click', () => {
       const shareUrl = window.location.origin + window.location.pathname + '?friend=' + encodeURIComponent(myId);
       const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(shareUrl)}`;
@@ -475,17 +482,14 @@
       document.getElementById('qrModal').style.display = 'flex';
     });
     
-    // 【追加】チャット画面ヘッダーの共有（🔗）ボタン
     document.getElementById('shareRoomBtn').addEventListener('click', () => {
       let shareUrl = window.location.origin + window.location.pathname;
       
       if (chatMode === 'private') {
-        // プライベートは友達招待として共有
         shareUrl += '?friend=' + encodeURIComponent(myId);
         document.getElementById('qrModalTitle').textContent = '📱 友達追加QRコード';
         document.getElementById('qrModalDesc').textContent = 'このコードを読み取ってもらうと、友達リクエストが届きます。';
       } else {
-        // グループ・全体は部屋のURLとして共有
         shareUrl += '?room=' + encodeURIComponent(currentRoomId);
         document.getElementById('qrModalTitle').textContent = '🚪 ルーム共有QRコード';
         document.getElementById('qrModalDesc').innerHTML = `このコードを読み取るかURLを共有すると、現在の部屋に参加できます。<br><br>共有URL:<br><input type="text" value="${shareUrl}" style="width:100%; margin-top:5px;" onclick="this.select();" readonly>`;
@@ -532,14 +536,12 @@
 
     document.getElementById('backFromUserProfileBtn').addEventListener('click', () => showScreen('home'));
 
-    // 全体チャットボタンの処理変更
     document.getElementById('globalChatBtn').addEventListener('click', () => {
       processUrlRoom('global_room');
     });
 
-    // 【追加】ランダムルーム作成ボタン
     document.getElementById('randomRoomBtn').addEventListener('click', () => {
-      const randomRoomId = Math.floor(100000 + Math.random() * 900000).toString(); // 6桁の数字
+      const randomRoomId = Math.floor(100000 + Math.random() * 900000).toString(); 
       processUrlRoom(randomRoomId);
     });
 
@@ -563,7 +565,8 @@
         snapshot.docChanges().forEach((change) => {
           if (change.type === "added") {
             const data = change.doc.data();
-            renderMessage(data.text, data.senderId === myId, data.senderName, data.senderIcon);
+            // 変更: createdAt と imageUrl を renderMessage に渡す
+            renderMessage(data.text, data.senderId === myId, data.senderName, data.senderIcon, data.createdAt, data.imageUrl);
           }
         });
       }, (error) => {
@@ -571,23 +574,98 @@
       });
     }
 
-    function renderMessage(text, isMine, senderName, senderIcon) {
+    // 変更: 画像・時刻表示に対応
+    function renderMessage(text, isMine, senderName, senderIcon, createdAt, imageUrl) {
       const msgArea = document.getElementById('msgArea');
       const div = document.createElement('div'); div.className = `msg-row ${isMine ? 'mine' : 'other'}`;
       const iconDiv = document.createElement('div'); iconDiv.className = 'chat-icon'; setIconDisplay(iconDiv, senderIcon);
       const wrapper = document.createElement('div'); wrapper.className = `msg-wrapper ${isMine ? 'mine' : 'other'}`;
-      if (!isMine) { const nameDiv = document.createElement('div'); nameDiv.className = 'sender-name'; nameDiv.textContent = senderName; wrapper.appendChild(nameDiv); }
-      const msgDiv = document.createElement('div'); msgDiv.className = `msg ${isMine ? 'my-msg' : 'bot-msg'}`; msgDiv.textContent = text;
+      
+      if (!isMine) { 
+        const nameDiv = document.createElement('div'); nameDiv.className = 'sender-name'; 
+        nameDiv.textContent = senderName; wrapper.appendChild(nameDiv); 
+      }
+      
+      const msgDiv = document.createElement('div'); msgDiv.className = `msg ${isMine ? 'my-msg' : 'bot-msg'}`; 
+      
+      // テキストが存在する場合
+      if (text) {
+        const textSpan = document.createElement('span');
+        textSpan.textContent = text;
+        msgDiv.appendChild(textSpan);
+      }
+      
+      // 画像やGIFが存在する場合
+      if (imageUrl) {
+        const img = document.createElement('img');
+        img.src = imageUrl;
+        img.className = 'chat-image';
+        msgDiv.appendChild(img);
+      }
+
+      // 時刻（タイムスタンプ）の生成
+      if (createdAt) {
+        const dateObj = new Date(createdAt);
+        const hours = dateObj.getHours().toString().padStart(2, '0');
+        const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+        
+        const timeDiv = document.createElement('div');
+        timeDiv.className = 'msg-time';
+        timeDiv.textContent = `${hours}:${minutes}`;
+        msgDiv.appendChild(timeDiv);
+      }
+
       wrapper.appendChild(msgDiv); div.appendChild(iconDiv); div.appendChild(wrapper);
       msgArea.appendChild(div); msgArea.scrollTop = msgArea.scrollHeight;
     }
 
+    // --- 変更: 画像/GIF送信処理 ---
+    document.getElementById('imageSendBtn').addEventListener('click', () => {
+      document.getElementById('chatImageInput').click();
+    });
+
+    document.getElementById('chatImageInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      // Firestoreの1MB制限エラーを防ぐため、800KB以上のファイルは制限
+      if (file.size > 800 * 1024) {
+        alert("ファイルサイズが大きすぎます（800KB以下の画像/GIFを選択してください）");
+        e.target.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = async function(event) {
+        const imageUrl = event.target.result;
+        try {
+          await addDoc(collection(db, "rooms", currentRoomId, "messages"), { 
+            text: "", 
+            imageUrl: imageUrl, // Base64として保存
+            senderId: myId, 
+            senderName: myName, 
+            senderIcon: myIconData, 
+            createdAt: Date.now() 
+          });
+        } catch (error) {
+          console.error("画像送信エラー:", error);
+        }
+      };
+      reader.readAsDataURL(file); // 画像やGIFを文字列化して読み込む
+      e.target.value = ''; // 連続で同じ画像を送れるようにリセット
+    });
+
     document.getElementById('sendBtn').addEventListener('click', async () => {
       const text = document.getElementById('chatTextInput').value.trim();
       if (!text) return; document.getElementById('chatTextInput').value = '';
-      // roomIdは常にcurrentRoomIdを使用する
       try {
-        await addDoc(collection(db, "rooms", currentRoomId, "messages"), { text, senderId: myId, senderName: myName, senderIcon: myIconData, createdAt: Date.now() });
+        await addDoc(collection(db, "rooms", currentRoomId, "messages"), { 
+          text: text, 
+          senderId: myId, 
+          senderName: myName, 
+          senderIcon: myIconData, 
+          createdAt: Date.now() 
+        });
       } catch (e) {
         console.error("送信エラー:", e);
       }
@@ -622,7 +700,6 @@
     
     document.getElementById('backFromFriendsBtn').addEventListener('click', () => showScreen('home'));
 
-    // 全体・グループ通話(Jitsi)のルーム名を動的に
     document.getElementById('startGlobalCallBtn').addEventListener('click', () => {
       showScreen('globalCall');
       const domain = 'meet.jit.si';
