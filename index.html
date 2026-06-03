@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+html_content = """<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
@@ -29,9 +29,13 @@
 
     /* プロフィール表示エリア */
     .my-profile-display { background-color: #e5ddd5; padding: 15px 40px; border-radius: 20px; text-align: center; border: 2px solid #075e54; display: inline-block; margin-bottom: 10px; position: relative; }
-    .profile-avatar-area { font-size: 45px; margin-bottom: 5px; cursor: pointer; display: inline-block; transition: transform 0.2s; user-select: none; }
+    
+    /* アイコンエリアを画像対応の丸型に修正 */
+    .profile-avatar-area { width: 70px; height: 70px; border-radius: 50%; background-color: #bdc3c7; margin: 0 auto 5px auto; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 40px; transition: transform 0.2s; user-select: none; overflow: hidden; }
     .profile-avatar-area:hover { transform: scale(1.1); }
-    .profile-avatar-hint { font-size: 10px; color: #666; display: block; margin-top: -5px; margin-bottom: 10px; }
+    .profile-avatar-area img { width: 100%; height: 100%; object-fit: cover; }
+    
+    .profile-avatar-hint { font-size: 10px; color: #666; display: block; margin-top: -3px; margin-bottom: 10px; }
     .profile-name { font-size: 22px; font-weight: bold; color: #333; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 10px; }
     .profile-id { font-size: 14px; color: #666; display: flex; align-items: center; justify-content: center; gap: 10px; }
     .warning-text { color: #2e7d32; font-size: 12px; font-weight: bold; margin-top: -5px; margin-bottom: 15px; }
@@ -117,8 +121,9 @@
       </div>
       <div class="content-area">
         <div class="my-profile-display">
-          <div id="displayMyIcon" class="profile-avatar-area" title="クリックして変更">👤</div>
-          <span class="profile-avatar-hint">クリックで変更</span>
+          <div id="displayMyIcon" class="profile-avatar-area" title="クリックして画像を変更">👤</div>
+          <input type="file" id="iconFileInput" accept="image/*" style="display: none;">
+          <span class="profile-avatar-hint">クリックで画像変更</span>
           
           <div class="profile-name">
             <span id="displayMyName"></span>
@@ -230,10 +235,11 @@
     const loginBtn = document.getElementById('loginBtn');
     
     const displayMyIcon = document.getElementById('displayMyIcon');
+    const iconFileInput = document.getElementById('iconFileInput'); // 追加
     const displayMyName = document.getElementById('displayMyName');
     const displayMyId = document.getElementById('displayMyId');
     const editNameBtn = document.getElementById('editNameBtn');
-    const editIdBtn = document.getElementById('editIdBtn'); // 追加
+    const editIdBtn = document.getElementById('editIdBtn');
     
     const globalChatBtn = document.getElementById('globalChatBtn');
     const friendIdInput = document.getElementById('friendIdInput');
@@ -257,7 +263,7 @@
     // ＝＝＝ 変数の準備 ＝＝＝
     let myName = '';
     let myId = '';
-    let myIcon = '👤'; // 追加
+    let myIcon = ''; // 画像のデータURL(Base64)用
     let currentFriendId = '';
     let chatMode = 'private'; // 'private' or 'global'
     let selectedText = '';
@@ -267,19 +273,29 @@
     let callSeconds = 0;
     let callTimeout;
 
+    // アイコンの表示を更新する補助関数
+    function updateIconDisplay() {
+      if (myIcon) {
+        displayMyIcon.innerHTML = `<img src="${myIcon}" alt="アイコン">`;
+      } else {
+        displayMyIcon.textContent = '👤';
+      }
+    }
+
     // ＝＝＝ 1. アプリ起動時（データ読み込み） ＝＝＝
     window.onload = () => {
       const savedName = localStorage.getItem('chatApp_MyName');
       const savedId = localStorage.getItem('chatApp_MyId');
-      const savedIcon = localStorage.getItem('chatApp_MyIcon'); // 追加
+      const savedIcon = localStorage.getItem('chatApp_MyIcon');
       if (savedName && savedId) {
         myName = savedName;
         myId = savedId;
-        if (savedIcon) myIcon = savedIcon; // 追加
+        if (savedIcon) myIcon = savedIcon;
         
         displayMyName.textContent = myName;
         displayMyId.textContent = myId;
-        displayMyIcon.textContent = myIcon; // 追加
+        updateIconDisplay();
+        
         loginScreen.classList.remove('active');
         homeScreen.classList.add('active');
       }
@@ -294,11 +310,12 @@
       myName = name; myId = id;
       localStorage.setItem('chatApp_MyName', myName);
       localStorage.setItem('chatApp_MyId', myId);
-      localStorage.setItem('chatApp_MyIcon', myIcon); // 追加
+      if (myIcon) localStorage.setItem('chatApp_MyIcon', myIcon);
       
       displayMyName.textContent = myName; 
       displayMyId.textContent = myId;
-      displayMyIcon.textContent = myIcon; // 追加
+      updateIconDisplay();
+      
       loginScreen.classList.remove('active'); 
       homeScreen.classList.add('active');
     });
@@ -314,7 +331,7 @@
       }
     });
 
-    // ＝＝＝ 3-2. ユーザーIDの変更処理（追加） ＝＝＝
+    // ＝＝＝ 3-2. ユーザーIDの変更処理 ＝＝＝
     editIdBtn.addEventListener('click', () => {
       const newId = prompt('新しいユーザーIDを入力してください', myId);
       if (newId !== null && newId.trim() !== '') {
@@ -325,15 +342,29 @@
       }
     });
 
-    // ＝＝＝ 3-3. アイコン（絵文字）の変更処理（追加） ＝＝＝
+    // ＝＝＝ 3-3. アイコン（画像アップロード）の変更処理 ＝＝＝
     displayMyIcon.addEventListener('click', () => {
-      const newIcon = prompt('新しいアイコン用のお好きな絵文字（または1文字）を入力してください', myIcon);
-      if (newIcon !== null && newIcon.trim() !== '') {
-        myIcon = newIcon.trim();
-        localStorage.setItem('chatApp_MyIcon', myIcon);
-        displayMyIcon.textContent = myIcon;
-        alert('アイコンを変更しました！');
+      iconFileInput.click(); // 隠しinputをクリックしてファイル選択を開く
+    });
+
+    iconFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      // 画像ファイルかチェック
+      if (!file.type.match('image.*')) {
+        alert('画像ファイルを選択してください。');
+        return;
       }
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        myIcon = event.target.result; // Base64文字列として取得
+        localStorage.setItem('chatApp_MyIcon', myIcon); // ローカルストレージに保存
+        updateIconDisplay(); // 表示を更新
+        alert('アイコン画像を変更しました！');
+      };
+      reader.readAsDataURL(file);
     });
 
     // ＝＝＝ 4. 全体チャットへの参加 ＝＝＝
@@ -508,4 +539,8 @@
 
   </script>
 </body>
-</html>
+</html>"""
+
+with open("index-v2.html", "w", encoding="utf-8") as f:
+    f.write(html_content)
+print("File generated successfully.")
