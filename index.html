@@ -124,10 +124,10 @@
           <div class="input-label">表示名（チャットで表示される名前）</div>
           <input type="text" id="myNameInput" class="text-input" placeholder="例: 太郎">
           
-          <div class="input-label">ユーザーID（ひらがな・重複不可）</div>
+          <div class="input-label">ユーザーID（ひらがな不可）</div>
           <input type="text" id="myIdInput" class="text-input" placeholder="例: taro_123">
           
-          <button id="loginBtn" class="action-btn" style="margin-top: 10px;">登録してはじめる</button>
+          <button id="loginBtn" class="action-btn" style="margin-top: 10px;">登録 / ログイン</button>
         </div>
       </div>
     </div>
@@ -359,7 +359,7 @@
       }
     };
 
-    // ＝＝＝ 2. ログイン処理 ＝＝＝
+    // ＝＝＝ 2. ログイン処理（重複OKに変更・既存ユーザーとしてログイン） ＝＝＝
     document.getElementById('loginBtn').addEventListener('click', () => {
       const name = document.getElementById('myNameInput').value.trim();
       const id = document.getElementById('myIdInput').value.trim();
@@ -371,19 +371,24 @@
       }
       
       let allUsers = getSafeData('chatApp_Users_v2', []);
-      
-      if (allUsers.find(u => u.id === id)) {
-        alert('そのIDはすでに使われています！別のIDに変更してください。');
-        return;
+      let existingUser = allUsers.find(u => u.id === id);
+
+      // ★ すでに同じIDが存在する場合はエラーにせず、そのユーザーとしてログインする ★
+      if (existingUser) {
+        myName = existingUser.name; // 保存されている名前を優先
+        myId = existingUser.id;
+        myIconData = existingUser.icon;
+        alert(`既存のアカウントが見つかりました。「${myName}」さんとしてログインします。`);
+      } else {
+        // 新規登録
+        myName = name; myId = id;
+        allUsers.push({ id: myId, name: myName, icon: myIconData });
+        localStorage.setItem('chatApp_Users_v2', JSON.stringify(allUsers));
       }
 
-      myName = name; myId = id;
       localStorage.setItem('chatApp_MyName', myName);
       localStorage.setItem('chatApp_MyId', myId);
       localStorage.setItem('chatApp_MyIcon', myIconData);
-
-      allUsers.push({ id: myId, name: myName, icon: myIconData });
-      localStorage.setItem('chatApp_Users_v2', JSON.stringify(allUsers));
       
       document.getElementById('displayMyName').textContent = myName; 
       document.getElementById('displayMyId').textContent = myId;
@@ -410,7 +415,7 @@
 
     // ＝＝＝ 3. ホーム画面でのID変更処理 ＝＝＝
     document.getElementById('editIdBtn').addEventListener('click', () => {
-      const newId = prompt('新しいユーザーIDを入力してください（ひらがな・重複不可）', myId);
+      const newId = prompt('新しいユーザーIDを入力してください（ひらがな不可）', myId);
       if (newId !== null && newId.trim() !== '' && newId.trim() !== myId) {
         const trimmedId = newId.trim();
         
@@ -421,8 +426,9 @@
 
         let allUsers = getSafeData('chatApp_Users_v2', []);
         
+        // ※ 変更後のIDがすでに他の人に使われている場合は、混ざってしまうので流石にブロックします
         if (allUsers.find(u => u.id === trimmedId)) {
-          alert('そのIDはすでに使われています！別のIDを指定してください。');
+          alert('そのIDはすでに他の人に使われています！別のIDを指定してください。');
           return;
         }
 
@@ -581,7 +587,6 @@
       }
     }
 
-    // ★【修正】自動返信ボットの処理（通信部分を削除し、ローカルで完結するように戻しました）
     function handleSend() {
       const text = document.getElementById('chatTextInput').value.trim();
       if (text === '') return;
@@ -607,7 +612,6 @@
       let callName = '';
       let callIcon = '';
 
-      // 全体チャットと個別チャットで通話画面の表記を切り替える
       if (chatMode === 'global') {
         callName = '🌍 全体通話';
         callIcon = '🗣️';
