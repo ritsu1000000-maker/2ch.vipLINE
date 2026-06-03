@@ -74,17 +74,16 @@
     .call-btn-circle:active { transform: scale(0.9); }
     .btn-red { background-color: #e74c3c; }
 
-    /* 着信ポップアップ */
+    /* ポップアップ類 (着信・リクエスト通知) */
     .incoming-call-alert { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: #f39c12; color: white; padding: 20px 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.4); z-index: 2000; text-align: center; display: none; flex-direction: column; gap: 15px; font-size: 18px; font-weight: bold; }
     .incoming-btns { display: flex; gap: 15px; justify-content: center; }
     .inc-btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; }
     .btn-answer { background: #27ae60; }
     .btn-reject { background: #c0392b; }
 
-    /* QRコード表示用モーダル追加 */
+    /* QRコード表示用モーダル */
     .qr-modal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 3000; text-align: center; display: none; flex-direction: column; gap: 15px; color: #333; font-weight: bold; width: 80%; max-width: 300px; }
     
-    /* 全体通話画面用 */
     #jitsiContainer { flex: 1; width: 100%; background: #000; }
   </style>
 </head>
@@ -101,9 +100,17 @@
       </div>
     </div>
 
+    <div id="friendRequestAlert" class="incoming-call-alert" style="background: #3498db;">
+      <div>🔔 <span id="requestSenderName"></span>さんから友達リクエスト！</div>
+      <div class="incoming-btns">
+        <button id="acceptReqBtn" class="inc-btn btn-answer">承認</button>
+        <button id="rejectReqBtn" class="inc-btn btn-reject">拒否</button>
+      </div>
+    </div>
+
     <div id="qrModal" class="qr-modal">
       <div style="font-size: 18px;">📱 友達追加QRコード</div>
-      <div style="font-size: 12px; color: #666; font-weight: normal;">このコードを読み取ると、あなたを友達追加してチャットを開始できます。</div>
+      <div style="font-size: 12px; color: #666; font-weight: normal;">このコードを読み取ってもらうと、友達リクエストが届きます。</div>
       <img id="qrImage" src="" alt="QR Code" style="margin: 0 auto; display: block; width: 200px; height: 200px; border-radius: 8px; border: 1px solid #ccc;">
       <button id="closeQrBtn" class="inc-btn btn-reject" style="width: 100%;">閉じる</button>
     </div>
@@ -157,10 +164,25 @@
         
         <div class="section-box" style="border-left: 5px solid #128C7E;">
           <h3 style="margin-top: 0;">👤 友達を追加する</h3>
-          <input type="text" id="friendIdInput" class="text-input" placeholder="相手のID">
-          <button id="addFriendBtn" class="action-btn">追加</button>
+          <input type="text" id="friendIdInput" class="text-input" placeholder="相手のIDを入力">
+          <button id="addFriendBtn" class="action-btn">検索</button>
           <button id="openFriendsBtn" class="action-btn link-btn">📋 友達リスト</button>
         </div>
+      </div>
+    </div>
+
+    <div id="userProfileScreen" class="screen">
+      <div class="header">
+        <button id="backFromUserProfileBtn" class="back-btn">◀ 戻る</button>
+        <span>プロフィール</span><div style="width: 70px;"></div>
+      </div>
+      <div class="content-area" style="justify-content: center;">
+         <div class="my-profile-display" style="width: 80%; padding: 30px;">
+            <div id="targetUserIcon" class="chat-icon profile-icon-large" style="margin: 0 auto 15px auto;">👤</div>
+            <div class="profile-name"><span id="targetUserName"></span></div>
+            <div class="profile-id" style="margin-bottom: 20px;">ID: <span id="targetUserId"></span></div>
+            <button id="sendRequestBtn" class="action-btn">友達リクエストを送信</button>
+         </div>
       </div>
     </div>
 
@@ -217,8 +239,9 @@
   </div>
 
   <script type="module">
+    // 🔥 Firebase に getDoc, where を追加でインポート
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, setDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, setDoc, getDoc, updateDoc, deleteDoc, where } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBCQArL0Q1wDveRywCpet5Nor3PuRYt7fM",
@@ -238,7 +261,12 @@
     const configuration = { iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }] };
     let jitsiApi = null;
 
-    const screens = { login: document.getElementById('loginScreen'), home: document.getElementById('homeScreen'), friends: document.getElementById('friendsScreen'), chat: document.getElementById('chatScreen'), call: document.getElementById('inCallScreen'), globalCall: document.getElementById('globalCallScreen') };
+    const screens = { 
+      login: document.getElementById('loginScreen'), home: document.getElementById('homeScreen'), 
+      userProfile: document.getElementById('userProfileScreen'), friends: document.getElementById('friendsScreen'), 
+      chat: document.getElementById('chatScreen'), call: document.getElementById('inCallScreen'), 
+      globalCall: document.getElementById('globalCallScreen') 
+    };
     function showScreen(screenName) { Object.values(screens).forEach(s => s.classList.remove('active')); screens[screenName].classList.add('active'); }
 
     function getSafeData(key, def) { try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : def; } catch (e) { return def; } }
@@ -267,25 +295,113 @@
       reader.readAsDataURL(file);
     }
     
-    // 【追加】URLパラメータから友達IDを追加してチャットを開く処理
-    function processUrlFriend(fId) {
-      if (fId === myId) {
-        alert("自分のQRコードを読み込みました");
-        return;
-      }
-      let f = getSafeData('chatApp_Friends', []); 
-      if(!f.includes(fId)) {
-        f.push(fId);
-        localStorage.setItem('chatApp_Friends', JSON.stringify(f)); 
-        alert(`${fId} さんを友達に追加しました！\nチャットを開始します。`);
-      }
-      // URLからパラメータを削除（リロード時の再実行を防ぐため）
-      window.history.replaceState({}, document.title, window.location.pathname);
-      startPrivateChat(fId);
+    // 【追加】プロフィールのDB保存（他の人が検索できるようにする）
+    async function saveProfileToDB() {
+      if(!myId) return;
+      try { await setDoc(doc(db, "users", myId), { name: myName, icon: myIconData, id: myId }, { merge: true }); } 
+      catch (e) { console.error("プロフィール保存エラー:", e); }
     }
 
+    // 【変更】相手のプロフィールを表示し、リクエストを送れるようにする
+    async function processUrlFriend(fId) {
+      if (!fId) return;
+      if (fId === myId) return alert("自分のIDです");
+      
+      let f = getSafeData('chatApp_Friends', []); 
+      if(f.includes(fId)) {
+        alert("すでに友達です。チャットを開始します。");
+        startPrivateChat(fId);
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return;
+      }
+      
+      // DBからユーザー情報を取得
+      const userDoc = await getDoc(doc(db, "users", fId));
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        document.getElementById('targetUserName').textContent = data.name;
+        document.getElementById('targetUserId').textContent = data.id;
+        setIconDisplay(document.getElementById('targetUserIcon'), data.icon);
+        
+        // 送信ボタンの処理
+        document.getElementById('sendRequestBtn').onclick = async () => {
+          try {
+            await addDoc(collection(db, "friend_requests"), {
+              senderId: myId, senderName: myName, senderIcon: myIconData,
+              receiverId: data.id, status: "pending", createdAt: Date.now()
+            });
+            alert("友達リクエストを送信しました！\n相手が承認するまでお待ちください。");
+            showScreen('home');
+          } catch(e) { alert("送信に失敗しました。"); }
+        };
+        showScreen('userProfile');
+      } else {
+        alert("ユーザーが見つかりません。（相手がまだ一度も初期設定を完了していない可能性があります）");
+        showScreen('home');
+      }
+      
+      // URLからパラメータを消去
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    // 【追加】自分宛ての友達リクエストを監視
+    function listenForFriendRequests() {
+      const q = query(collection(db, "friend_requests"), where("receiverId", "==", myId));
+      onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === "added") {
+            const req = change.doc.data();
+            const reqId = change.doc.id;
+            if(req.status !== "pending") return;
+
+            document.getElementById('requestSenderName').textContent = req.senderName;
+            document.getElementById('friendRequestAlert').style.display = 'flex';
+            
+            // 承認ボタン
+            document.getElementById('acceptReqBtn').onclick = async () => {
+              document.getElementById('friendRequestAlert').style.display = 'none';
+              let f = getSafeData('chatApp_Friends', []);
+              if(!f.includes(req.senderId)) f.push(req.senderId);
+              localStorage.setItem('chatApp_Friends', JSON.stringify(f));
+              
+              // 状態をacceptedに変更して相手に伝える
+              await updateDoc(doc(db, "friend_requests", reqId), { status: "accepted" });
+              alert(`${req.senderName}さんと友達になりました！`);
+            };
+            
+            // 拒否ボタン
+            document.getElementById('rejectReqBtn').onclick = async () => {
+              document.getElementById('friendRequestAlert').style.display = 'none';
+              await deleteDoc(doc(db, "friend_requests", reqId));
+            };
+          }
+        });
+      });
+    }
+
+    // 【追加】自分が送ったリクエストが承認されたか監視
+    function listenForAcceptedRequests() {
+      const q = query(collection(db, "friend_requests"), where("senderId", "==", myId));
+      onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach(async (change) => {
+          if (change.type === "modified" || change.type === "added") {
+            const req = change.doc.data();
+            const reqId = change.doc.id;
+            if(req.status === "accepted") {
+              let f = getSafeData('chatApp_Friends', []);
+              if(!f.includes(req.receiverId)) f.push(req.receiverId);
+              localStorage.setItem('chatApp_Friends', JSON.stringify(f));
+              alert(`友達リクエストが承認されました！\n(ID: ${req.receiverId})`);
+              // 用済みになったリクエストドキュメントを削除
+              await deleteDoc(doc(db, "friend_requests", reqId));
+            }
+          }
+        });
+      });
+    }
+
+
     window.onload = () => {
-      // 【追加】URLSearchParams で ?friend=xxx を取得
       const params = new URLSearchParams(window.location.search);
       const friendIdFromUrl = params.get('friend');
 
@@ -295,15 +411,17 @@
         myName = sName; myId = sId; myIconData = sIcon || '👤';
         document.getElementById('displayMyName').textContent = myName; document.getElementById('displayMyId').textContent = myId;
         setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
+        saveProfileToDB(); // 起動時に念のためDB同期
+        
         showScreen('home');
         listenForIncomingCalls();
+        listenForFriendRequests();     // リクエスト受信の監視開始
+        listenForAcceptedRequests();   // リクエスト承認の監視開始
 
-        // ログイン済みの状態でURLにパラメータがあればすぐ追加
         if (friendIdFromUrl) {
           processUrlFriend(friendIdFromUrl);
         }
       } else {
-        // 未ログイン状態でURLにパラメータがある場合は一時保存
         if (friendIdFromUrl) {
           window.pendingFriendId = friendIdFromUrl;
         }
@@ -319,6 +437,7 @@
         myIconData = dataUrl;
         setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
         localStorage.setItem('chatApp_MyIcon', myIconData);
+        saveProfileToDB(); // アイコン変更時もDB更新
       });
     });
 
@@ -328,16 +447,13 @@
         myName = newName.trim();
         document.getElementById('displayMyName').textContent = myName;
         localStorage.setItem('chatApp_MyName', myName);
+        saveProfileToDB(); // 名前変更時もDB更新
       }
     });
 
-    // 【追加】QRコード表示/非表示の制御
     document.getElementById('showQrBtn').addEventListener('click', () => {
-      // 共有用URLの生成 (現在のURLに ?friend=自分のID を付与)
       const shareUrl = window.location.origin + window.location.pathname + '?friend=' + encodeURIComponent(myId);
-      // api.qrserver.com を使ってURLからQRコード画像を生成
       const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(shareUrl)}`;
-      
       document.getElementById('qrImage').src = qrApiUrl;
       document.getElementById('qrModal').style.display = 'flex';
     });
@@ -351,21 +467,35 @@
       processImage(e.target.files[0], (dataUrl) => { myIconData = dataUrl; setIconDisplay(document.getElementById('iconPreview'), myIconData); });
     });
 
-    document.getElementById('loginBtn').addEventListener('click', () => {
+    document.getElementById('loginBtn').addEventListener('click', async () => {
       const n = document.getElementById('myNameInput').value.trim(), id = document.getElementById('myIdInput').value.trim();
       if (!n || !id) return alert('入力してください');
       myName = n; myId = id;
       localStorage.setItem('chatApp_MyName', myName); localStorage.setItem('chatApp_MyId', myId); localStorage.setItem('chatApp_MyIcon', myIconData);
       document.getElementById('displayMyName').textContent = myName; document.getElementById('displayMyId').textContent = myId;
       setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
-      showScreen('home'); listenForIncomingCalls();
+      
+      await saveProfileToDB(); // ログイン時DBに登録
+      
+      showScreen('home'); 
+      listenForIncomingCalls();
+      listenForFriendRequests();
+      listenForAcceptedRequests();
 
-      // 【追加】初回ログイン時に待機中の友達IDがあれば追加処理
       if (window.pendingFriendId) {
         processUrlFriend(window.pendingFriendId);
         window.pendingFriendId = null;
       }
     });
+
+    // 検索・追加の処理も URLパラメータ時と同じ「プロフィール画面」経由に変更
+    document.getElementById('addFriendBtn').addEventListener('click', () => {
+      const id = document.getElementById('friendIdInput').value.trim();
+      if(!id) return;
+      processUrlFriend(id);
+    });
+
+    document.getElementById('backFromUserProfileBtn').addEventListener('click', () => showScreen('home'));
 
     document.getElementById('globalChatBtn').addEventListener('click', () => {
       chatMode = 'global'; showScreen('chat'); document.getElementById('chatTitle').textContent = '🌍 全体チャット';
@@ -393,7 +523,6 @@
         });
       }, (error) => {
         console.error("チャット読み込みエラー:", error);
-        alert("⚠️ メッセージの読み込みに失敗しました！\nFirebaseの「セキュリティルール」が許可されていない可能性があります。");
       });
     }
 
@@ -412,32 +541,43 @@
       const text = document.getElementById('chatTextInput').value.trim();
       if (!text) return; document.getElementById('chatTextInput').value = '';
       const roomId = chatMode === 'global' ? 'global_room' : currentRoomId;
-      
       try {
         await addDoc(collection(db, "rooms", roomId, "messages"), { text, senderId: myId, senderName: myName, senderIcon: myIconData, createdAt: Date.now() });
       } catch (e) {
         console.error("送信エラー:", e);
-        alert("⚠️ メッセージの送信に失敗しました！\nFirebaseの「セキュリティルール」が許可されていない可能性があります。");
       }
     });
 
     document.getElementById('backBtn').addEventListener('click', () => { showScreen('home'); });
-    document.getElementById('openFriendsBtn').addEventListener('click', () => {
-      showScreen('friends'); const area = document.getElementById('friendsListArea'); area.innerHTML = '';
+    
+    // 【変更】友達リストを開く時、DBから最新の名前とアイコンを取得して表示するように改良
+    document.getElementById('openFriendsBtn').addEventListener('click', async () => {
+      showScreen('friends'); 
+      const area = document.getElementById('friendsListArea'); 
+      area.innerHTML = '読み込み中...';
       const friends = getSafeData('chatApp_Friends', []);
-      friends.forEach(f => {
+      
+      area.innerHTML = '';
+      if(friends.length === 0) { area.innerHTML = '友達がいません'; return; }
+      
+      for (const f of friends) {
+        let fName = f; let fIcon = '👤';
+        try {
+          const userDoc = await getDoc(doc(db, "users", f));
+          if(userDoc.exists()) { fName = userDoc.data().name; fIcon = userDoc.data().icon; }
+        } catch(e) {}
+        
         const d = document.createElement('div'); d.className = 'friend-item';
-        d.innerHTML = `<div class="friend-info"><div class="chat-icon">👤</div><div class="friend-id">${f}</div></div>`;
-        d.onclick = () => startPrivateChat(f); area.appendChild(d);
-      });
+        // アイコンが画像データなら背景に設定、そうでない場合は文字として入れる
+        const bgStyle = fIcon.startsWith('data:') ? `background-image:url(${fIcon});` : '';
+        const txt = fIcon.startsWith('data:') ? '' : fIcon;
+        d.innerHTML = `<div class="friend-info"><div class="chat-icon" style="${bgStyle}">${txt}</div><div class="friend-id">${fName}<br><span style="font-size:12px;color:#888;">ID: ${f}</span></div></div>`;
+        d.onclick = () => startPrivateChat(f); 
+        area.appendChild(d);
+      }
     });
+    
     document.getElementById('backFromFriendsBtn').addEventListener('click', () => showScreen('home'));
-    document.getElementById('addFriendBtn').addEventListener('click', () => {
-      const id = document.getElementById('friendIdInput').value.trim();
-      if(!id || id === myId) return;
-      let f = getSafeData('chatApp_Friends', []); if(!f.includes(id)) f.push(id);
-      localStorage.setItem('chatApp_Friends', JSON.stringify(f)); alert('追加しました！');
-    });
 
     document.getElementById('startGlobalCallBtn').addEventListener('click', () => {
       showScreen('globalCall');
