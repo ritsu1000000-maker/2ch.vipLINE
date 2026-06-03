@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>チャット（Firebase完全版）</title>
+  <title>チャット（Firebase完全版＋ルーム招待対応）</title>
   <style>
     /* ＝＝＝ 全体の基本設定 ＝＝＝ */
     body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
@@ -28,6 +28,8 @@
     .global-btn:hover { background-color: #d35400; }
     .purple-btn { background-color: #8e44ad; }
     .purple-btn:hover { background-color: #732d91; }
+    .blue-btn { background-color: #3498db; }
+    .blue-btn:hover { background-color: #2980b9; }
 
     /* プロフィール表示エリア */
     .my-profile-display { background-color: #e5ddd5; padding: 15px 40px; border-radius: 20px; text-align: center; border: 2px solid #075e54; display: inline-block; margin-bottom: 10px; position: relative; }
@@ -160,6 +162,13 @@
           
           <button id="copyInviteLinkBtn" class="edit-name-btn" style="margin-top: 10px; background-color: #128C7E; padding: 6px 12px; font-size: 14px;">🔗 自分の招待URLをコピー</button>
         </div>
+
+        <div class="section-box" style="border-left: 5px solid #3498db;">
+          <h3 style="margin-top: 0;">🚪 カスタムルーム</h3>
+          <p style="font-size: 14px; color: #666;">合言葉（ルーム名）を決めて専用の部屋を作ろう！</p>
+          <input type="text" id="roomNameInput" class="text-input" placeholder="例: ひみつの部屋">
+          <button id="joinRoomBtn" class="action-btn blue-btn">このルームに入る</button>
+        </div>
         
         <div class="section-box" style="border-left: 5px solid #e67e22;">
           <h3 style="margin-top: 0;">🌍 全体チャット</h3>
@@ -198,6 +207,7 @@
         <button id="backBtn" class="back-btn">◀ 戻る</button>
         <span id="chatTitle">チャット</span>
         <div>
+          <button id="inviteChatBtn" class="header-icon-btn" style="margin-right: 10px; font-size: 20px;" title="このチャットに招待">🔗</button>
           <button id="shareChatBtn" class="header-icon-btn" style="margin-right: 10px; font-size: 20px;" title="履歴を共有">📤</button>
           <button id="startCallBtn" class="header-icon-btn" title="通話">📞</button>
         </div>
@@ -230,7 +240,7 @@
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-analytics.js";
     import { getDatabase, ref, push, onChildAdded, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-    // あなたのFirebase設定
+    // Firebase設定
     const firebaseConfig = {
       apiKey: "AIzaSyBCQArL0Q1wDveRywCpet5Nor3PuRYt7fM",
       authDomain: "sabopennet.firebaseapp.com",
@@ -241,12 +251,10 @@
       measurementId: "G-K17XRK5KRN"
     };
 
-    // Firebaseの初期化
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
     const db = getDatabase(app);
 
-    // 以降、アプリの全ロジック
     function getSafeData(key, defaultData) {
       try {
         const data = localStorage.getItem(key);
@@ -282,11 +290,13 @@
     let myId = '';
     let myIconData = '👤';
     let currentFriendId = '';
-    let chatMode = 'private';
+    let currentRoomId = ''; // ★ 追加: カスタムルームの名前を保持する変数
+    let chatMode = 'private'; // 'private', 'global', 'room'
     let selectedText = '';
     let selectedSenderId = '';
     let pendingInviteId = null;
-    let currentChatUnsubscribe = null; // ★Firebase用：リスナー解除変数
+    let pendingRoomId = null; // ★ 追加: URLから読み取ったルーム名
+    let currentChatUnsubscribe = null;
     
     const notificationSound = new Audio('coin05.mp3');
     notificationSound.volume = 0.5;
@@ -352,13 +362,19 @@
       });
     });
 
+    // ＝＝＝ URLSearchParamsの処理 ＝＝＝
     window.onload = () => {
       const urlParams = new URLSearchParams(window.location.search);
       pendingInviteId = urlParams.get('friend');
+      pendingRoomId = urlParams.get('room'); // ★ ?room=ルーム名 を読み取る
 
       if (pendingInviteId) {
         const inviteMsgDiv = document.getElementById('inviteMsg');
         inviteMsgDiv.textContent = `📢 「${pendingInviteId}」さんから招待されています！ログインしてチャットを始めましょう。`;
+        inviteMsgDiv.style.display = 'block';
+      } else if (pendingRoomId) {
+        const inviteMsgDiv = document.getElementById('inviteMsg');
+        inviteMsgDiv.textContent = `🚪 ルーム「${pendingRoomId}」に招待されています！ログインして参加しましょう。`;
         inviteMsgDiv.style.display = 'block';
       }
 
@@ -376,6 +392,8 @@
         
         if (pendingInviteId && pendingInviteId !== myId) {
           addFriendAndStartChat(pendingInviteId);
+        } else if (pendingRoomId) {
+          startRoomChat(pendingRoomId);
         } else {
           homeScreen.classList.add('active');
         }
@@ -395,14 +413,29 @@
         localStorage.setItem('chatApp_Friends', JSON.stringify(friends)); 
       }
       
+      // URLのパラメータを綺麗にする
       window.history.replaceState({}, document.title, window.location.pathname);
       startPrivateChat(friendId);
+    }
+
+    // ★ カスタムルームを開始する関数 ★
+    function startRoomChat(roomId) {
+      chatMode = 'room';
+      currentRoomId = roomId;
+      
+      friendsScreen.classList.remove('active'); 
+      homeScreen.classList.remove('active');
+      chatScreen.classList.add('active'); 
+      document.getElementById('chatTitle').textContent = `🚪 ${roomId}`; 
+      
+      window.history.replaceState({}, document.title, window.location.pathname);
+      loadChatMessages('room', roomId);
     }
 
     document.getElementById('copyInviteLinkBtn').addEventListener('click', () => {
       const inviteUrl = `${window.location.origin}${window.location.pathname}?friend=${myId}`;
       if (navigator.clipboard) {
-        navigator.clipboard.writeText(inviteUrl).then(() => alert('招待URLをコピーしました！\n\n' + inviteUrl));
+        navigator.clipboard.writeText(inviteUrl).then(() => alert('自分を友達追加する招待URLをコピーしました！\n\n' + inviteUrl));
       } else {
         prompt('以下のURLをコピーして相手に送ってください', inviteUrl);
       }
@@ -435,8 +468,12 @@
       setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
       
       loginScreen.classList.remove('active'); 
+      
+      // ログイン後の振り分け
       if (pendingInviteId && pendingInviteId !== myId) {
         addFriendAndStartChat(pendingInviteId);
+      } else if (pendingRoomId) {
+        startRoomChat(pendingRoomId);
       } else {
         homeScreen.classList.add('active');
       }
@@ -471,6 +508,14 @@
         document.getElementById('displayMyId').textContent = myId;
         alert('ユーザーIDを変更しました！');
       }
+    });
+
+    // ★ ホーム画面からカスタムルームに入る処理 ★
+    document.getElementById('joinRoomBtn').addEventListener('click', () => {
+      const roomId = document.getElementById('roomNameInput').value.trim();
+      if (roomId === '') return alert('ルーム名を入力してください！');
+      document.getElementById('roomNameInput').value = '';
+      startRoomChat(roomId);
     });
 
     document.getElementById('addFriendBtn').addEventListener('click', () => {
@@ -527,7 +572,6 @@
       });
     }
 
-    // モジュール化によるスコープ外れ対策
     window.deleteFriend = function(id) {
       if (confirm(`「${id}」を削除しますか？`)) {
         let f = getSafeData('chatApp_Friends', []);
@@ -535,24 +579,22 @@
       }
     };
 
-    // ★ Firebaseからメッセージを読み込む処理 ★
     function loadChatMessages(mode, targetId) {
-      document.getElementById('msgArea').innerHTML = ''; // 画面クリア
+      document.getElementById('msgArea').innerHTML = ''; 
       
-      // 前に開いていたチャットルームがあれば通信を切断する
       if (currentChatUnsubscribe) {
         currentChatUnsubscribe();
         currentChatUnsubscribe = null;
       }
 
-      // ルームIDを作成（個別の場合はAさんとBさんのIDを繋げた名前）
-      let roomId = mode === 'global' ? 'global' : [myId, targetId].sort().join('_');
+      let dbRoomId = '';
+      if (mode === 'global') dbRoomId = 'global';
+      else if (mode === 'room') dbRoomId = `room_${targetId}`;
+      else dbRoomId = [myId, targetId].sort().join('_');
       
-      // Firebaseデータベースの特定のルーム（直近100件）を監視
-      const q = query(ref(db, `messages/${roomId}`), limitToLast(100));
+      const q = query(ref(db, `messages/${dbRoomId}`), limitToLast(100));
       currentChatUnsubscribe = onChildAdded(q, (snapshot) => {
         const data = snapshot.val();
-        // 自分からのメッセージか、他人からのメッセージかを判定して表示
         addMessage(data.text, data.senderId === myId, data.senderId, data.senderName, data.senderIcon);
       });
     }
@@ -565,7 +607,7 @@
       chatScreen.classList.add('active'); 
       document.getElementById('chatTitle').textContent = fData.name; 
       
-      loadChatMessages('private', friendId); // Firebase読み込み
+      loadChatMessages('private', friendId); 
     }
 
     document.getElementById('openFriendsBtn').addEventListener('click', () => { homeScreen.classList.remove('active'); friendsScreen.classList.add('active'); loadFriends(); });
@@ -574,15 +616,11 @@
     document.getElementById('globalChatBtn').addEventListener('click', () => {
       chatMode = 'global'; homeScreen.classList.remove('active'); chatScreen.classList.add('active');
       document.getElementById('chatTitle').textContent = '🌍 全体チャット';
-      loadChatMessages('global', null); // Firebase読み込み
+      loadChatMessages('global', null); 
     });
 
     document.getElementById('backBtn').addEventListener('click', () => { 
-      // 戻るボタンを押したら通信を止める
-      if (currentChatUnsubscribe) {
-        currentChatUnsubscribe();
-        currentChatUnsubscribe = null;
-      }
+      if (currentChatUnsubscribe) { currentChatUnsubscribe(); currentChatUnsubscribe = null; }
       chatScreen.classList.remove('active'); homeScreen.classList.add('active'); 
     });
 
@@ -640,16 +678,17 @@
       }
     }
 
-    // ★ Firebaseへのメッセージ送信 ★
     function handleSend() {
       const text = document.getElementById('chatTextInput').value.trim();
       if (text === '') return;
       document.getElementById('chatTextInput').value = '';
       
-      let roomId = chatMode === 'global' ? 'global' : [myId, currentFriendId].sort().join('_');
+      let dbRoomId = '';
+      if (chatMode === 'global') dbRoomId = 'global';
+      else if (chatMode === 'room') dbRoomId = `room_${currentRoomId}`;
+      else dbRoomId = [myId, currentFriendId].sort().join('_');
       
-      // データベースに送信するだけ（表示は自動で行われる）
-      push(ref(db, `messages/${roomId}`), {
+      push(ref(db, `messages/${dbRoomId}`), {
         text: text,
         senderId: myId,
         senderName: myName,
@@ -662,12 +701,38 @@
     document.getElementById('chatTextInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(); });
     document.addEventListener('click', () => { document.getElementById('contextMenu').style.display = 'none'; });
 
+    // ★ チャット画面の「リンク（🔗）」ボタンで、現在のチャットに合わせた招待URLを発行する ★
+    document.getElementById('inviteChatBtn').addEventListener('click', () => {
+      let inviteUrl = '';
+      let msg = '';
+      
+      if (chatMode === 'private') {
+         // プライベートチャットを開いている時は、自分を友達追加するURL
+         inviteUrl = `${window.location.origin}${window.location.pathname}?friend=${myId}`;
+         msg = 'あなたとのチャットに招待するURLをコピーしました！';
+      } else if (chatMode === 'room') {
+         // カスタムルームを開いている時は、そのルームに参加するURL
+         inviteUrl = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(currentRoomId)}`;
+         msg = `ルーム「${currentRoomId}」の招待URLをコピーしました！`;
+      } else if (chatMode === 'global') {
+         alert('全体チャットはURLを使わずに誰でも入室できます！');
+         return;
+      }
+      
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(inviteUrl).then(() => alert(`${msg}\nLINE等で送って招待しましょう。\n\n${inviteUrl}`));
+      } else {
+        prompt('以下のURLをコピーして相手に送ってください', inviteUrl);
+      }
+    });
+
     let callInterval, callSeconds = 0, callTimeout;
     function formatTime(s) { return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`; }
     
     document.getElementById('startCallBtn').addEventListener('click', () => {
       let callName = '', callIcon = '';
       if (chatMode === 'global') { callName = '🌍 全体通話'; callIcon = '🗣️'; } 
+      else if (chatMode === 'room') { callName = `🚪 ${currentRoomId}通話`; callIcon = '🗣️'; } 
       else {
         const allUsers = getSafeData('chatApp_Users_v2', []);
         const fData = allUsers.find(u => u.id === currentFriendId) || { name: currentFriendId, icon: '👤' };
