@@ -26,30 +26,38 @@
     .action-btn:hover { background-color: #0b7366; }
     .global-btn { background-color: #e67e22; }
     .global-btn:hover { background-color: #d35400; }
+    .purple-btn { background-color: #8e44ad; }
+    .purple-btn:hover { background-color: #732d91; }
 
     /* プロフィール表示エリア */
     .my-profile-display { background-color: #e5ddd5; padding: 15px 40px; border-radius: 20px; text-align: center; border: 2px solid #075e54; display: inline-block; margin-bottom: 10px; position: relative; }
     .profile-name { font-size: 22px; font-weight: bold; color: #333; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 10px; }
     .profile-id { font-size: 14px; color: #666; }
     .warning-text { color: #d32f2f; font-size: 12px; font-weight: bold; margin-top: -5px; margin-bottom: 15px; }
-    
     .edit-name-btn { background-color: #34495e; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; }
     .edit-name-btn:hover { background-color: #2c3e50; }
+
+    /* ＝＝＝ 共通アイコンスタイル ＝＝＝ */
+    .chat-icon { width: 45px; height: 45px; border-radius: 50%; background-color: #bdc3c7; background-size: cover; background-position: center; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 2px solid #fff; }
+    .profile-icon-large { width: 80px; height: 80px; font-size: 40px; margin: 0 auto 10px auto; }
 
     /* ＝＝＝ 通知とチャット画面 ＝＝＝ */
     .notification { position: absolute; top: -100px; left: 50%; transform: translateX(-50%); background-color: #25D366; color: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); width: 70%; text-align: center; font-size: 16px; font-weight: bold; cursor: pointer; transition: top 0.4s ease-in-out; z-index: 10; }
     .notification.show { top: 20px; }
     .messages { flex: 1; padding: 20px; overflow-y: auto; background-image: url('https://www.transparenttextures.com/patterns/cubes.png'); background-color: #e5ddd5; display: flex; flex-direction: column; gap: 15px; }
     
-    .msg-wrapper { display: flex; flex-direction: column; max-width: 60%; }
-    .msg-wrapper.mine { align-self: flex-end; align-items: flex-end; }
-    .msg-wrapper.other { align-self: flex-start; align-items: flex-start; }
-    .sender-name { font-size: 12px; color: #666; margin-bottom: 4px; margin-left: 5px; margin-right: 5px; }
+    .msg-row { display: flex; align-items: flex-start; gap: 10px; width: 100%; margin-bottom: 5px; }
+    .msg-row.mine { flex-direction: row-reverse; }
     
-    .msg { padding: 15px; border-radius: 12px; font-size: 16px; line-height: 1.5; word-wrap: break-word; cursor: pointer; user-select: none; }
+    .msg-wrapper { display: flex; flex-direction: column; max-width: 65%; }
+    .msg-wrapper.mine { align-items: flex-end; }
+    .msg-wrapper.other { align-items: flex-start; }
+    
+    .sender-name { font-size: 12px; color: #666; margin-bottom: 4px; margin-left: 5px; margin-right: 5px; font-weight: bold; }
+    .msg { padding: 12px 15px; border-radius: 15px; font-size: 16px; line-height: 1.4; word-wrap: break-word; cursor: pointer; user-select: none; box-shadow: 0 1px 2px rgba(0,0,0,0.15); }
     .msg:active { opacity: 0.8; }
-    .msg.my-msg { background-color: #dcf8c6; border-bottom-right-radius: 0; }
-    .msg.bot-msg { background-color: #fff; border-bottom-left-radius: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+    .msg.my-msg { background-color: #dcf8c6; border-top-right-radius: 0; }
+    .msg.bot-msg { background-color: #fff; border-top-left-radius: 0; }
     
     .chat-input-area { display: flex; padding: 15px; background-color: #f0f0f0; }
     #chatTextInput { flex: 1; padding: 15px; border: none; border-radius: 25px; outline: none; font-size: 16px; }
@@ -65,7 +73,7 @@
     /* ＝＝＝ 通話画面のデザイン ＝＝＝ */
     .header-icon-btn { background: none; border: none; color: white; font-size: 22px; cursor: pointer; }
     .call-theme { background-color: #2c3e50; color: white; justify-content: center; align-items: center; text-align: center; }
-    .call-avatar { width: 120px; height: 120px; background-color: #7f8c8d; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 50px; margin-bottom: 20px; }
+    .call-avatar { width: 120px; height: 120px; background-color: #7f8c8d; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 50px; margin-bottom: 20px; background-size: cover; background-position: center; border: 4px solid #fff; }
     .call-name { font-size: 28px; font-weight: bold; margin-bottom: 10px; }
     .call-status { font-size: 18px; color: #bdc3c7; margin-bottom: 50px; }
     .call-timer { font-size: 24px; font-family: monospace; margin-bottom: 50px; }
@@ -79,7 +87,6 @@
     .link-btn:hover { background-color: #2c3e50; }
     .friend-item { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); width: 100%; max-width: 500px; box-sizing: border-box; }
     .friend-info { display: flex; align-items: center; gap: 15px; }
-    .friend-icon { width: 45px; height: 45px; background-color: #bdc3c7; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 24px; }
     .friend-id { font-size: 18px; font-weight: bold; color: #333; }
     .delete-btn { background-color: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px; transition: background 0.2s;}
     .delete-btn:hover { background-color: #c0392b; }
@@ -108,10 +115,17 @@
         <div class="section-box">
           <h2>アプリへようこそ</h2>
           <p class="warning-text">※一度登録するとブラウザに記憶されます<br>（IDは後から変更できません）</p>
+          
+          <div class="input-label">プロフィール画像（任意）</div>
+          <div id="iconPreview" class="chat-icon profile-icon-large">👤</div>
+          <input type="file" id="myIconUpload" accept="image/*" class="text-input" style="padding: 10px; font-size: 14px;">
+
           <div class="input-label">表示名（チャットで表示される名前）</div>
           <input type="text" id="myNameInput" class="text-input" placeholder="例: 太郎">
-          <div class="input-label">ユーザーID（友達追加用）</div>
+          
+          <div class="input-label">ユーザーID（重複不可）</div>
           <input type="text" id="myIdInput" class="text-input" placeholder="例: taro_123">
+          
           <button id="loginBtn" class="action-btn" style="margin-top: 10px;">登録してはじめる</button>
         </div>
       </div>
@@ -125,6 +139,8 @@
       </div>
       <div class="content-area">
         <div class="my-profile-display">
+          <div id="homeMyIcon" class="chat-icon profile-icon-large">👤</div>
+          
           <div class="profile-name">
             <span id="displayMyName"></span>
             <button id="editNameBtn" class="edit-name-btn">✎ 変更</button>
@@ -145,6 +161,13 @@
           <button id="addFriendBtn" class="action-btn">IDを追加して話す</button>
           
           <button id="openFriendsBtn" class="action-btn link-btn">📋 友達リストを開く</button>
+        </div>
+
+        <div class="section-box" style="border-left: 5px solid #8e44ad;">
+          <h3 style="margin-top: 0;">🎵 通知音の設定</h3>
+          <p style="font-size: 14px; color: #666;">チャットの送信・受信時に鳴る音を選択</p>
+          <input type="file" id="audioUpload" accept="audio/*" class="text-input" style="padding: 10px;">
+          <button id="testSoundBtn" class="action-btn purple-btn">▶ 音をテスト再生</button>
         </div>
       </div>
     </div>
@@ -173,14 +196,14 @@
     </div>
 
     <div id="callingScreen" class="screen call-theme">
-      <div class="call-avatar">👤</div>
+      <div class="call-avatar" id="callingAvatar">👤</div>
       <div class="call-name" id="callingNameDisplay">相手の名前</div>
       <div class="call-status">発信中...</div>
       <button id="cancelCallBtn" class="call-btn-circle btn-red">☎</button>
     </div>
 
     <div id="inCallScreen" class="screen call-theme">
-      <div class="call-avatar" style="background-color: #27ae60;">🗣️</div>
+      <div class="call-avatar" id="inCallAvatar" style="border-color: #27ae60;">👤</div>
       <div class="call-name" id="inCallNameDisplay">相手の名前</div>
       <div class="call-timer" id="callTimerDisplay">00:00</div>
       <button id="endCallBtn" class="call-btn-circle btn-red">☎</button>
@@ -189,338 +212,339 @@
   </div>
 
   <script>
-    // ★追加: データの破損（過去のエラー）を防ぐための安全な読み込み関数
     function getSafeData(key, defaultData) {
       try {
         const data = localStorage.getItem(key);
         return data ? JSON.parse(data) : defaultData;
       } catch (e) {
-        console.warn(`${key} のデータが壊れていたためリセットしました。`);
         localStorage.setItem(key, JSON.stringify(defaultData));
         return defaultData;
       }
     }
 
-    // ＝＝＝ 天気取得機能 ＝＝＝
+    // ＝＝＝ 天気 ＝＝＝
     async function fetchWeather() {
       const weatherLogin = document.getElementById('weatherLogin');
       const weatherHome = document.getElementById('weatherHome');
       try {
         const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=35.6983&longitude=139.9822&current_weather=true');
         const data = await res.json();
-        const temp = data.current_weather.temperature;
         const code = data.current_weather.weathercode;
-
         let icon = '☁️'; 
-        if (code === 0) icon = '☀️';
-        else if (code >= 1 && code <= 3) icon = '⛅';
-        else if (code >= 51 && code <= 67) icon = '🌧️';
-        else if (code >= 71 && code <= 77) icon = '❄️';
-        else if (code >= 95) icon = '⚡';
-
-        const weatherText = `${icon} ${temp}℃`;
-        weatherLogin.textContent = weatherText;
-        weatherHome.textContent = weatherText;
-      } catch (err) {
-        weatherLogin.textContent = '☁️ --℃';
-        weatherHome.textContent = '☁️ --℃';
-      }
+        if (code === 0) icon = '☀️'; else if (code <= 3) icon = '⛅'; else if (code <= 67) icon = '🌧️'; else if (code <= 77) icon = '❄️'; else if (code >= 95) icon = '⚡';
+        const text = `${icon} ${data.current_weather.temperature}℃`;
+        weatherLogin.textContent = text; weatherHome.textContent = text;
+      } catch (err) { }
     }
     fetchWeather();
-    document.getElementById('weatherLogin').addEventListener('click', fetchWeather);
-    document.getElementById('weatherHome').addEventListener('click', fetchWeather);
 
-    // ＝＝＝ HTML要素の取得 ＝＝＝
+    // ＝＝＝ 変数 ＝＝＝
     const appContainer = document.getElementById('appContainer');
     const loginScreen = document.getElementById('loginScreen');
     const homeScreen = document.getElementById('homeScreen');
     const friendsScreen = document.getElementById('friendsScreen');
     const chatScreen = document.getElementById('chatScreen');
-    const callingScreen = document.getElementById('callingScreen');
-    const inCallScreen = document.getElementById('inCallScreen');
-    
-    const notification = document.getElementById('notification');
-    const myNameInput = document.getElementById('myNameInput');
-    const myIdInput = document.getElementById('myIdInput');
-    const loginBtn = document.getElementById('loginBtn');
-    
-    const displayMyName = document.getElementById('displayMyName');
-    const displayMyId = document.getElementById('displayMyId');
-    const editNameBtn = document.getElementById('editNameBtn');
-    
-    const globalChatBtn = document.getElementById('globalChatBtn');
-    const friendIdInput = document.getElementById('friendIdInput');
-    const addFriendBtn = document.getElementById('addFriendBtn');
-    const openFriendsBtn = document.getElementById('openFriendsBtn');
-    const backFromFriendsBtn = document.getElementById('backFromFriendsBtn');
-    const friendsListArea = document.getElementById('friendsListArea');
-    
-    const backBtn = document.getElementById('backBtn');
-    const chatTitle = document.getElementById('chatTitle');
-    const msgArea = document.getElementById('msgArea');
-    const chatTextInput = document.getElementById('chatTextInput');
-    const sendBtn = document.getElementById('sendBtn');
     
     let myName = '';
     let myId = '';
+    let myIconData = '👤'; // デフォルトアイコン
     let currentFriendId = '';
     let chatMode = 'private';
     let selectedText = '';
-    let selectedSender = '';
     
-    // 音声ファイルの準備
-    const coinSound = new Audio('coin.mp3');
-    coinSound.volume = 0.3;
+    const notificationSound = new Audio();
+    notificationSound.volume = 0.5;
+
+    // 音声アップロード
+    document.getElementById('audioUpload').addEventListener('change', function(e) {
+      if (e.target.files[0]) notificationSound.src = URL.createObjectURL(e.target.files[0]);
+    });
+    document.getElementById('testSoundBtn').addEventListener('click', function() {
+      if (!notificationSound.src || notificationSound.src === location.href) return alert('先に音声ファイルを選択してください！');
+      notificationSound.currentTime = 0; notificationSound.play().catch(e=>alert('再生できません'));
+    });
+
+    // ★追加: アイコン画像のアップロードとリサイズ処理（容量制限対策）
+    document.getElementById('myIconUpload').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const size = 120; // 120x120ピクセルに縮小して保存
+          canvas.width = size; canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          
+          // 中央を正方形に切り抜く
+          let min = Math.min(img.width, img.height);
+          let sx = (img.width - min) / 2; let sy = (img.height - min) / 2;
+          ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+          
+          myIconData = canvas.toDataURL('image/jpeg', 0.8);
+          document.getElementById('iconPreview').style.backgroundImage = `url(${myIconData})`;
+          document.getElementById('iconPreview').textContent = '';
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // アイコンを画面にセットする便利関数
+    function setIconDisplay(element, iconValue) {
+      if (iconValue && iconValue.startsWith('data:image')) {
+        element.style.backgroundImage = `url(${iconValue})`;
+        element.textContent = '';
+      } else {
+        element.style.backgroundImage = 'none';
+        element.textContent = iconValue || '👤';
+      }
+    }
 
     // ＝＝＝ 1. アプリ起動時 ＝＝＝
     window.onload = () => {
-      // 存在するユーザーのダミーリストを安全に読み込み
-      let allUsers = getSafeData('chatApp_AllUsers', []);
-      const dummyUsers = ['taro_123', 'hanako_456', 'mario_777'];
-      
-      // ダミーユーザーが含まれていなければ追加
+      // ユーザーデータの形式を「オブジェクト」に変更 (IDの重複チェックやアイコン表示のため)
+      let allUsers = getSafeData('chatApp_Users_v2', []);
+      const dummyUsers = [
+        { id: 'taro_123', name: '太郎', icon: '👦' },
+        { id: 'hanako_456', name: '花子', icon: '👧' },
+        { id: 'mario_777', name: 'マリオ', icon: '🍄' }
+      ];
       let updated = false;
-      dummyUsers.forEach(u => {
-        if (!allUsers.includes(u)) { allUsers.push(u); updated = true; }
+      dummyUsers.forEach(du => {
+        if (!allUsers.find(u => u.id === du.id)) { allUsers.push(du); updated = true; }
       });
-      if (updated) localStorage.setItem('chatApp_AllUsers', JSON.stringify(allUsers));
+      if (updated) localStorage.setItem('chatApp_Users_v2', JSON.stringify(allUsers));
 
       const savedName = localStorage.getItem('chatApp_MyName');
       const savedId = localStorage.getItem('chatApp_MyId');
+      const savedIcon = localStorage.getItem('chatApp_MyIcon');
+      
       if (savedName && savedId) {
-        myName = savedName;
-        myId = savedId;
-        displayMyName.textContent = myName;
-        displayMyId.textContent = myId;
-        loginScreen.classList.remove('active');
-        homeScreen.classList.add('active');
+        myName = savedName; myId = savedId; myIconData = savedIcon || '👤';
+        document.getElementById('displayMyName').textContent = myName;
+        document.getElementById('displayMyId').textContent = myId;
+        setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
+        
+        loginScreen.classList.remove('active'); homeScreen.classList.add('active');
       }
     };
 
-    // ＝＝＝ 2. ログイン処理 ＝＝＝
-    loginBtn.addEventListener('click', () => {
-      const name = myNameInput.value.trim();
-      const id = myIdInput.value.trim();
+    // ＝＝＝ 2. ログイン処理（重複IDチェック追加） ＝＝＝
+    document.getElementById('loginBtn').addEventListener('click', () => {
+      const name = document.getElementById('myNameInput').value.trim();
+      const id = document.getElementById('myIdInput').value.trim();
       if (name === '' || id === '') { alert('表示名とユーザーIDを入力してください！'); return; }
       
+      let allUsers = getSafeData('chatApp_Users_v2', []);
+      
+      // ★追加: ID重複チェック
+      if (allUsers.find(u => u.id === id)) {
+        alert('そのIDはすでに使われています！別のIDに変更してください。');
+        return;
+      }
+
       myName = name; myId = id;
       localStorage.setItem('chatApp_MyName', myName);
       localStorage.setItem('chatApp_MyId', myId);
+      localStorage.setItem('chatApp_MyIcon', myIconData);
 
-      let allUsers = getSafeData('chatApp_AllUsers', []);
-      if (!allUsers.includes(myId)) {
-        allUsers.push(myId);
-        localStorage.setItem('chatApp_AllUsers', JSON.stringify(allUsers));
-      }
+      // 自分を全体ユーザーリストに登録
+      allUsers.push({ id: myId, name: myName, icon: myIconData });
+      localStorage.setItem('chatApp_Users_v2', JSON.stringify(allUsers));
       
-      displayMyName.textContent = myName; 
-      displayMyId.textContent = myId;
-      loginScreen.classList.remove('active'); 
-      homeScreen.classList.add('active');
+      document.getElementById('displayMyName').textContent = myName; 
+      document.getElementById('displayMyId').textContent = myId;
+      setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
+      
+      loginScreen.classList.remove('active'); homeScreen.classList.add('active');
     });
 
-    editNameBtn.addEventListener('click', () => {
-      const newName = prompt('新しい表示名を入力してください', myName);
-      if (newName !== null && newName.trim() !== '') {
-        myName = newName.trim();
-        localStorage.setItem('chatApp_MyName', myName);
-        displayMyName.textContent = myName;
-        alert('名前を変更しました！');
-      }
-    });
-
-    // ＝＝＝ 3. 友達追加と通知 ＝＝＝
-    addFriendBtn.addEventListener('click', () => {
-      const id = friendIdInput.value.trim();
-      if (id === '') { alert('相手のIDを入力してください！'); return; }
-      if (id === myId) { alert('自分自身のIDは追加できません！'); return; }
+    // ＝＝＝ 3. 友達追加とリスト ＝＝＝
+    document.getElementById('addFriendBtn').addEventListener('click', () => {
+      const id = document.getElementById('friendIdInput').value.trim();
+      if (id === '') return alert('相手のIDを入力してください！');
+      if (id === myId) return alert('自分自身のIDは追加できません！');
       
-      let allUsers = getSafeData('chatApp_AllUsers', []);
-      if (!allUsers.includes(id)) {
-        alert('そのIDは存在しません！正しいIDを入力してください。\n（※テスト用として taro_123, hanako_456, mario_777 が追加できます）');
-        return;
+      let allUsers = getSafeData('chatApp_Users_v2', []);
+      if (!allUsers.find(u => u.id === id)) {
+        return alert('そのIDは存在しません！正しいIDを入力してください。\n（※テスト用として taro_123, hanako_456, mario_777 が追加できます）');
       }
 
       let friends = getSafeData('chatApp_Friends', []);
-      if (!friends.includes(id)) {
-        friends.push(id);
-        localStorage.setItem('chatApp_Friends', JSON.stringify(friends));
-      }
-
-      currentFriendId = id; 
-      friendIdInput.value = '';
+      if (!friends.includes(id)) { friends.push(id); localStorage.setItem('chatApp_Friends', JSON.stringify(friends)); }
+      currentFriendId = id; document.getElementById('friendIdInput').value = '';
       
       setTimeout(() => {
-        notification.classList.add('show');
-        notification.innerHTML = `✅ <b>${currentFriendId}</b> を友達に追加しました！<br><span style="font-size: 14px;">(タップしてトークを開始)</span>`;
+        const noti = document.getElementById('notification');
+        noti.classList.add('show');
+        noti.innerHTML = `✅ <b>${currentFriendId}</b> を友達に追加しました！<br><span style="font-size: 14px;">(タップしてトークを開始)</span>`;
       }, 500);
     });
 
-    notification.addEventListener('click', () => {
-      notification.classList.remove('show');
-      startPrivateChat(currentFriendId);
+    document.getElementById('notification').addEventListener('click', () => {
+      document.getElementById('notification').classList.remove('show'); startPrivateChat(currentFriendId);
     });
 
-    // ＝＝＝ 4. 友達リストの表示機能 ＝＝＝
     function loadFriends() {
       const friends = getSafeData('chatApp_Friends', []);
-      friendsListArea.innerHTML = '';
+      const allUsers = getSafeData('chatApp_Users_v2', []);
+      const area = document.getElementById('friendsListArea');
+      area.innerHTML = '';
 
-      if (friends.length === 0) {
-        friendsListArea.innerHTML = `
-          <div class="no-friends">
-            まだ友達が追加されていません。<br>
-            元の画面に戻って「ID」を入力し、追加してください。<br><br>
-            ※テスト用ID: <b>taro_123</b>
-          </div>
-        `;
-        return;
-      }
+      if (friends.length === 0) return area.innerHTML = `<div class="no-friends">まだ友達がいません。</div>`;
 
       friends.forEach(friendId => {
-        const itemDiv = document.createElement('div');
-        itemDiv.className = 'friend-item';
-        itemDiv.innerHTML = `
+        // 友達のアイコンと名前を取得
+        const fData = allUsers.find(u => u.id === friendId) || { name: friendId, icon: '👤' };
+        
+        const item = document.createElement('div');
+        item.className = 'friend-item';
+        item.innerHTML = `
           <div class="friend-info">
-            <div class="friend-icon">👤</div>
-            <div class="friend-id">${friendId}</div>
+            <div class="chat-icon friend-list-icon"></div>
+            <div>
+              <div class="friend-id">${fData.name}</div>
+              <div style="font-size:12px; color:#666;">ID: ${friendId}</div>
+            </div>
           </div>
-          <div>
-            <button class="delete-btn" onclick="deleteFriend('${friendId}')">削除</button>
-          </div>
+          <div><button class="delete-btn" onclick="deleteFriend('${friendId}')">削除</button></div>
         `;
-        itemDiv.style.cursor = 'pointer';
-        itemDiv.onclick = (e) => {
-          if (e.target.tagName !== 'BUTTON') {
-            startPrivateChat(friendId);
-          }
-        };
-        friendsListArea.appendChild(itemDiv);
+        setIconDisplay(item.querySelector('.friend-list-icon'), fData.icon);
+        
+        item.style.cursor = 'pointer';
+        item.onclick = (e) => { if (e.target.tagName !== 'BUTTON') startPrivateChat(friendId); };
+        area.appendChild(item);
       });
     }
 
-    window.deleteFriend = function(friendId) {
-      if (confirm(`「${friendId}」を友達リストから削除しますか？`)) {
-        let friends = getSafeData('chatApp_Friends', []);
-        friends = friends.filter(id => id !== friendId);
-        localStorage.setItem('chatApp_Friends', JSON.stringify(friends));
-        loadFriends(); 
+    window.deleteFriend = function(id) {
+      if (confirm(`「${id}」を削除しますか？`)) {
+        let f = getSafeData('chatApp_Friends', []);
+        f = f.filter(i => i !== id); localStorage.setItem('chatApp_Friends', JSON.stringify(f)); loadFriends(); 
       }
     };
 
     function startPrivateChat(friendId) {
-      currentFriendId = friendId;
-      chatMode = 'private';
-      friendsScreen.classList.remove('active');
-      homeScreen.classList.remove('active');
-      chatScreen.classList.add('active');
-      chatTitle.textContent = `👤 ${currentFriendId}`; 
-      msgArea.innerHTML = '';
+      currentFriendId = friendId; chatMode = 'private';
+      const allUsers = getSafeData('chatApp_Users_v2', []);
+      const fData = allUsers.find(u => u.id === friendId) || { name: friendId, icon: '👤' };
+      
+      friendsScreen.classList.remove('active'); homeScreen.classList.remove('active');
+      chatScreen.classList.add('active'); 
+      document.getElementById('chatTitle').textContent = fData.name; 
+      document.getElementById('msgArea').innerHTML = '';
       addMessage(`こんにちは、${myName}さん！`, false, currentFriendId);
     }
 
-    openFriendsBtn.addEventListener('click', () => {
-      homeScreen.classList.remove('active');
-      friendsScreen.classList.add('active');
-      loadFriends(); // ここでリストを再生成
-    });
+    document.getElementById('openFriendsBtn').addEventListener('click', () => { homeScreen.classList.remove('active'); friendsScreen.classList.add('active'); loadFriends(); });
+    document.getElementById('backFromFriendsBtn').addEventListener('click', () => { friendsScreen.classList.remove('active'); homeScreen.classList.add('active'); });
 
-    backFromFriendsBtn.addEventListener('click', () => {
-      friendsScreen.classList.remove('active');
-      homeScreen.classList.add('active');
-    });
-
-
-    // ＝＝＝ 5. チャット画面遷移・表示 ＝＝＝
-    globalChatBtn.addEventListener('click', () => {
-      chatMode = 'global';
-      homeScreen.classList.remove('active'); 
-      chatScreen.classList.add('active');
-      chatTitle.textContent = '🌍 全体チャット'; 
-      msgArea.innerHTML = '';
+    // ＝＝＝ 4. チャット画面・アイコン表示機能 ＝＝＝
+    document.getElementById('globalChatBtn').addEventListener('click', () => {
+      chatMode = 'global'; homeScreen.classList.remove('active'); chatScreen.classList.add('active');
+      document.getElementById('chatTitle').textContent = '🌍 全体チャット'; document.getElementById('msgArea').innerHTML = '';
       addMessage('【システム】全体チャットルームに入室しました！', false, 'システム');
     });
 
-    backBtn.addEventListener('click', () => {
-      chatScreen.classList.remove('active'); 
-      homeScreen.classList.add('active');
-    });
+    document.getElementById('backBtn').addEventListener('click', () => { chatScreen.classList.remove('active'); homeScreen.classList.add('active'); });
 
-    function addMessage(text, isMine, senderName = '') {
-      const wrapper = document.createElement('div');
-      wrapper.classList.add('msg-wrapper');
-      wrapper.classList.add(isMine ? 'mine' : 'other');
+    function addMessage(text, isMine, senderId = '') {
+      const allUsers = getSafeData('chatApp_Users_v2', []);
+      let user = null;
       
-      if (!isMine && senderName) {
+      if (isMine) {
+        user = { name: myName, icon: myIconData };
+      } else {
+        user = allUsers.find(u => u.id === senderId);
+        if (!user) user = { name: senderId === 'システム' ? '案内役' : senderId, icon: senderId === 'システム' ? '🤖' : '👤' };
+      }
+
+      // ★追加: 左右にアイコンが並ぶLINE風の行レイアウト
+      const row = document.createElement('div');
+      row.className = 'msg-row ' + (isMine ? 'mine' : 'other');
+      
+      const iconDiv = document.createElement('div');
+      iconDiv.className = 'chat-icon';
+      setIconDisplay(iconDiv, user.icon);
+      
+      const wrapper = document.createElement('div');
+      wrapper.className = 'msg-wrapper ' + (isMine ? 'mine' : 'other');
+      
+      if (!isMine) {
         const nameDiv = document.createElement('div');
-        nameDiv.classList.add('sender-name'); 
-        nameDiv.textContent = senderName;
+        nameDiv.className = 'sender-name'; nameDiv.textContent = user.name;
         wrapper.appendChild(nameDiv);
       }
       
-      const div = document.createElement('div');
-      div.classList.add('msg'); 
-      div.classList.add(isMine ? 'my-msg' : 'bot-msg');
-      div.textContent = text;
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'msg ' + (isMine ? 'my-msg' : 'bot-msg'); 
+      msgDiv.textContent = text;
       
-      div.addEventListener('click', (e) => {
-        e.stopPropagation();
-        selectedText = text; 
-        selectedSender = isMine ? myId : senderName;
+      // コンテキストメニュー用
+      msgDiv.addEventListener('click', (e) => {
+        e.stopPropagation(); selectedText = text;
         const rect = appContainer.getBoundingClientRect();
-        let x = e.clientX - rect.left; 
-        let y = e.clientY - rect.top;
+        let x = e.clientX - rect.left; let y = e.clientY - rect.top;
         if (x + 150 > rect.width) x -= 150;
-        document.getElementById('contextMenu').style.left = `${x}px`; 
-        document.getElementById('contextMenu').style.top = `${y}px`;
+        document.getElementById('contextMenu').style.left = `${x}px`; document.getElementById('contextMenu').style.top = `${y}px`;
         document.getElementById('contextMenu').style.display = 'flex';
       });
 
-      wrapper.appendChild(div); 
-      msgArea.appendChild(wrapper);
+      wrapper.appendChild(msgDiv);
+      row.appendChild(iconDiv);
+      row.appendChild(wrapper);
+      
+      const msgArea = document.getElementById('msgArea');
+      msgArea.appendChild(row); 
       msgArea.scrollTop = msgArea.scrollHeight;
 
-      coinSound.currentTime = 0;
-      coinSound.play().catch(e => console.warn("音の自動再生がブロックされました", e));
+      if (notificationSound.src && notificationSound.src !== location.href) {
+        notificationSound.currentTime = 0;
+        notificationSound.play().catch(e => console.warn("ブロック", e));
+      }
     }
 
     function handleSend() {
-      const text = chatTextInput.value.trim();
+      const text = document.getElementById('chatTextInput').value.trim();
       if (text === '') return;
-      addMessage(text, true); 
-      chatTextInput.value = '';
+      addMessage(text, true); document.getElementById('chatTextInput').value = '';
       if(chatMode === 'private') {
-          setTimeout(() => {
-              addMessage(`「${text}」ですね。`, false, currentFriendId);
-          }, 1000);
+          setTimeout(() => { addMessage(`「${text}」ですね。`, false, currentFriendId); }, 1000);
       }
     }
     document.getElementById('sendBtn').addEventListener('click', handleSend);
-    chatTextInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(); });
+    document.getElementById('chatTextInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(); });
     document.addEventListener('click', () => { document.getElementById('contextMenu').style.display = 'none'; });
 
-    // ＝＝＝ 6. 通話機能 ＝＝＝
+    // ＝＝＝ 5. 通話機能 ＝＝＝
     let callInterval, callSeconds = 0, callTimeout;
-    function formatTime(seconds) {
-      const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-      const s = (seconds % 60).toString().padStart(2, '0');
-      return `${m}:${s}`;
-    }
+    function formatTime(s) { return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`; }
+    
     document.getElementById('startCallBtn').addEventListener('click', () => {
       if (chatMode === 'global') return alert('全体チャットでは通話できません！');
-      chatScreen.classList.remove('active');
-      callingScreen.classList.add('active');
-      document.getElementById('callingNameDisplay').textContent = currentFriendId;
+      const allUsers = getSafeData('chatApp_Users_v2', []);
+      const fData = allUsers.find(u => u.id === currentFriendId) || { name: currentFriendId, icon: '👤' };
+
+      chatScreen.classList.remove('active'); 
+      document.getElementById('callingScreen').classList.add('active');
+      document.getElementById('callingNameDisplay').textContent = fData.name;
+      setIconDisplay(document.getElementById('callingAvatar'), fData.icon);
+
       callTimeout = setTimeout(() => {
-        callingScreen.classList.remove('active');
-        inCallScreen.classList.add('active');
-        document.getElementById('inCallNameDisplay').textContent = currentFriendId;
+        document.getElementById('callingScreen').classList.remove('active'); 
+        document.getElementById('inCallScreen').classList.add('active');
+        document.getElementById('inCallNameDisplay').textContent = fData.name;
+        setIconDisplay(document.getElementById('inCallAvatar'), fData.icon);
+        
         callSeconds = 0; document.getElementById('callTimerDisplay').textContent = formatTime(callSeconds);
         callInterval = setInterval(() => { callSeconds++; document.getElementById('callTimerDisplay').textContent = formatTime(callSeconds); }, 1000);
       }, 3000);
     });
-    document.getElementById('cancelCallBtn').addEventListener('click', () => { clearTimeout(callTimeout); callingScreen.classList.remove('active'); chatScreen.classList.add('active'); });
-    document.getElementById('endCallBtn').addEventListener('click', () => { clearInterval(callInterval); inCallScreen.classList.remove('active'); chatScreen.classList.add('active'); addMessage(`📞 通話が終了しました（${formatTime(callSeconds)}）`, true); });
+    
+    document.getElementById('cancelCallBtn').addEventListener('click', () => { clearTimeout(callTimeout); document.getElementById('callingScreen').classList.remove('active'); chatScreen.classList.add('active'); });
+    document.getElementById('endCallBtn').addEventListener('click', () => { clearInterval(callInterval); document.getElementById('inCallScreen').classList.remove('active'); chatScreen.classList.add('active'); addMessage(`📞 通話が終了しました（${formatTime(callSeconds)}）`, true); });
 
   </script>
 </body>
