@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>チャット（ハイブリッド版）</title>
+  <title>チャット（Firebase完全版）</title>
   <style>
     /* ＝＝＝ 全体の基本設定 ＝＝＝ */
     body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
@@ -45,7 +45,7 @@
     /* ＝＝＝ 通知とチャット画面 ＝＝＝ */
     .notification { position: absolute; top: -100px; left: 50%; transform: translateX(-50%); background-color: #25D366; color: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); width: 70%; text-align: center; font-size: 16px; font-weight: bold; cursor: pointer; transition: top 0.4s ease-in-out; z-index: 10; }
     .notification.show { top: 20px; }
-    .messages { flex: 1; padding: 20px; overflow-y: auto; background-image: url('https://www.transparenttextures.com/patterns/cubes.png'); background-color: #e5ddd5; display: flex; flex-direction: column; gap: 15px; }
+    .messages { flex: 1; padding: 20px; overflow-y: auto; background-image: url('https://www.transparenttextures.com/patterns/cubes.png'); background-color: #e5ddd5; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
     
     .msg-row { display: flex; align-items: flex-start; gap: 10px; width: 100%; margin-bottom: 5px; }
     .msg-row.mine { flex-direction: row-reverse; }
@@ -225,20 +225,28 @@
 
   </div>
 
-  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-analytics.js";
+    import { getDatabase, ref, push, onChildAdded, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-  <script>
-    let socket = null;
-    
-    // 2. サーバーが動いていれば接続、動いていなくてもエラーで停止させない！
-    try {
-      if (typeof io !== 'undefined') {
-        socket = io("http://localhost:3000", { transports: ['websocket', 'polling'] });
-      }
-    } catch (e) {
-      console.warn("オフラインモードで動作中");
-    }
+    // あなたのFirebase設定
+    const firebaseConfig = {
+      apiKey: "AIzaSyBCQArL0Q1wDveRywCpet5Nor3PuRYt7fM",
+      authDomain: "sabopennet.firebaseapp.com",
+      projectId: "sabopennet",
+      storageBucket: "sabopennet.firebasestorage.app",
+      messagingSenderId: "284308308452",
+      appId: "1:284308308452:web:e36dd991e55a0e60e4c7f1",
+      measurementId: "G-K17XRK5KRN"
+    };
 
+    // Firebaseの初期化
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getDatabase(app);
+
+    // 以降、アプリの全ロジック
     function getSafeData(key, defaultData) {
       try {
         const data = localStorage.getItem(key);
@@ -278,6 +286,7 @@
     let selectedText = '';
     let selectedSenderId = '';
     let pendingInviteId = null;
+    let currentChatUnsubscribe = null; // ★Firebase用：リスナー解除変数
     
     const notificationSound = new Audio('coin05.mp3');
     notificationSound.volume = 0.5;
@@ -353,7 +362,6 @@
         inviteMsgDiv.style.display = 'block';
       }
 
-      let allUsers = getSafeData('chatApp_Users_v2', []);
       const savedName = localStorage.getItem('chatApp_MyName');
       const savedId = localStorage.getItem('chatApp_MyId');
       const savedIcon = localStorage.getItem('chatApp_MyIcon');
@@ -394,9 +402,7 @@
     document.getElementById('copyInviteLinkBtn').addEventListener('click', () => {
       const inviteUrl = `${window.location.origin}${window.location.pathname}?friend=${myId}`;
       if (navigator.clipboard) {
-        navigator.clipboard.writeText(inviteUrl).then(() => {
-          alert('招待URLをコピーしました！\n\n' + inviteUrl);
-        });
+        navigator.clipboard.writeText(inviteUrl).then(() => alert('招待URLをコピーしました！\n\n' + inviteUrl));
       } else {
         prompt('以下のURLをコピーして相手に送ってください', inviteUrl);
       }
@@ -412,9 +418,7 @@
       let existingUser = allUsers.find(u => u.id === id);
 
       if (existingUser) {
-        myName = existingUser.name;
-        myId = existingUser.id;
-        myIconData = existingUser.icon;
+        myName = existingUser.name; myId = existingUser.id; myIconData = existingUser.icon;
         alert(`既存のアカウント「${myName}」さんとしてログインします。`);
       } else {
         myName = name; myId = id;
@@ -431,7 +435,6 @@
       setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
       
       loginScreen.classList.remove('active'); 
-      
       if (pendingInviteId && pendingInviteId !== myId) {
         addFriendAndStartChat(pendingInviteId);
       } else {
@@ -456,7 +459,6 @@
       if (newId !== null && newId.trim() !== '' && newId.trim() !== myId) {
         const trimmedId = newId.trim();
         if (trimmedId.match(/[\u3040-\u309F]/)) { alert('ひらがなは使用できません！'); return; }
-        
         let allUsers = getSafeData('chatApp_Users_v2', []);
         if (allUsers.find(u => u.id === trimmedId)) { alert('そのIDはすでに使われています！'); return; }
 
@@ -465,8 +467,7 @@
           allUsers[meIndex].id = trimmedId;
           localStorage.setItem('chatApp_Users_v2', JSON.stringify(allUsers));
         }
-        myId = trimmedId;
-        localStorage.setItem('chatApp_MyId', myId);
+        myId = trimmedId; localStorage.setItem('chatApp_MyId', myId);
         document.getElementById('displayMyId').textContent = myId;
         alert('ユーザーIDを変更しました！');
       }
@@ -517,7 +518,7 @@
               <div style="font-size:12px; color:#666;">ID: ${friendId}</div>
             </div>
           </div>
-          <div><button class="delete-btn" onclick="deleteFriend('${friendId}')">削除</button></div>
+          <div><button class="delete-btn" onclick="window.deleteFriend('${friendId}')">削除</button></div>
         `;
         setIconDisplay(item.querySelector('.friend-list-icon'), fData.icon);
         item.style.cursor = 'pointer';
@@ -526,12 +527,35 @@
       });
     }
 
+    // モジュール化によるスコープ外れ対策
     window.deleteFriend = function(id) {
       if (confirm(`「${id}」を削除しますか？`)) {
         let f = getSafeData('chatApp_Friends', []);
         f = f.filter(i => i !== id); localStorage.setItem('chatApp_Friends', JSON.stringify(f)); loadFriends(); 
       }
     };
+
+    // ★ Firebaseからメッセージを読み込む処理 ★
+    function loadChatMessages(mode, targetId) {
+      document.getElementById('msgArea').innerHTML = ''; // 画面クリア
+      
+      // 前に開いていたチャットルームがあれば通信を切断する
+      if (currentChatUnsubscribe) {
+        currentChatUnsubscribe();
+        currentChatUnsubscribe = null;
+      }
+
+      // ルームIDを作成（個別の場合はAさんとBさんのIDを繋げた名前）
+      let roomId = mode === 'global' ? 'global' : [myId, targetId].sort().join('_');
+      
+      // Firebaseデータベースの特定のルーム（直近100件）を監視
+      const q = query(ref(db, `messages/${roomId}`), limitToLast(100));
+      currentChatUnsubscribe = onChildAdded(q, (snapshot) => {
+        const data = snapshot.val();
+        // 自分からのメッセージか、他人からのメッセージかを判定して表示
+        addMessage(data.text, data.senderId === myId, data.senderId, data.senderName, data.senderIcon);
+      });
+    }
 
     function startPrivateChat(friendId) {
       currentFriendId = friendId; chatMode = 'private';
@@ -540,7 +564,8 @@
       friendsScreen.classList.remove('active'); homeScreen.classList.remove('active');
       chatScreen.classList.add('active'); 
       document.getElementById('chatTitle').textContent = fData.name; 
-      document.getElementById('msgArea').innerHTML = '';
+      
+      loadChatMessages('private', friendId); // Firebase読み込み
     }
 
     document.getElementById('openFriendsBtn').addEventListener('click', () => { homeScreen.classList.remove('active'); friendsScreen.classList.add('active'); loadFriends(); });
@@ -548,10 +573,18 @@
 
     document.getElementById('globalChatBtn').addEventListener('click', () => {
       chatMode = 'global'; homeScreen.classList.remove('active'); chatScreen.classList.add('active');
-      document.getElementById('chatTitle').textContent = '🌍 全体チャット'; document.getElementById('msgArea').innerHTML = '';
+      document.getElementById('chatTitle').textContent = '🌍 全体チャット';
+      loadChatMessages('global', null); // Firebase読み込み
     });
 
-    document.getElementById('backBtn').addEventListener('click', () => { chatScreen.classList.remove('active'); homeScreen.classList.add('active'); });
+    document.getElementById('backBtn').addEventListener('click', () => { 
+      // 戻るボタンを押したら通信を止める
+      if (currentChatUnsubscribe) {
+        currentChatUnsubscribe();
+        currentChatUnsubscribe = null;
+      }
+      chatScreen.classList.remove('active'); homeScreen.classList.add('active'); 
+    });
 
     function addMessage(text, isMine, senderId = '', senderName = '', senderIcon = '') {
       const allUsers = getSafeData('chatApp_Users_v2', []);
@@ -585,9 +618,7 @@
       msgDiv.textContent = text;
       
       msgDiv.addEventListener('click', (e) => {
-        e.stopPropagation(); 
-        selectedText = text;
-        selectedSenderId = isMine ? myId : senderId;
+        e.stopPropagation(); selectedText = text; selectedSenderId = isMine ? myId : senderId;
         const rect = appContainer.getBoundingClientRect();
         let x = e.clientX - rect.left; let y = e.clientY - rect.top;
         if (x + 150 > rect.width) x -= 150;
@@ -609,47 +640,27 @@
       }
     }
 
+    // ★ Firebaseへのメッセージ送信 ★
     function handleSend() {
       const text = document.getElementById('chatTextInput').value.trim();
       if (text === '') return;
-      
-      addMessage(text, true); 
       document.getElementById('chatTextInput').value = '';
       
-      // ★ サーバーが繋がっているか確認してから送信する ★
-      if (socket && socket.connected) {
-        socket.emit('sendMessage', {
-          text: text,
-          senderId: myId,
-          senderName: myName,
-          senderIcon: myIconData,
-          targetId: chatMode === 'private' ? currentFriendId : 'global',
-          mode: chatMode
-        });
-      } else {
-        // ★ サーバーに繋がっていない（ファイルを直接開いた）場合は、一人用モードとして動かす ★
-        if (chatMode === 'private') {
-           setTimeout(() => { addMessage(`「${text}」ですね。(※現在オフラインです)`, false, currentFriendId); }, 1000);
-        } else {
-           setTimeout(() => { addMessage(`(※サーバーに未接続のため、他の人には届いていません)`, false, 'システム', '案内役', '🤖'); }, 1000);
-        }
-      }
+      let roomId = chatMode === 'global' ? 'global' : [myId, currentFriendId].sort().join('_');
+      
+      // データベースに送信するだけ（表示は自動で行われる）
+      push(ref(db, `messages/${roomId}`), {
+        text: text,
+        senderId: myId,
+        senderName: myName,
+        senderIcon: myIconData,
+        timestamp: Date.now()
+      }).catch(err => alert("送信エラー: データベースのルール設定を確認してください\n" + err));
     }
+    
     document.getElementById('sendBtn').addEventListener('click', handleSend);
     document.getElementById('chatTextInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(); });
     document.addEventListener('click', () => { document.getElementById('contextMenu').style.display = 'none'; });
-
-    if (socket) {
-      socket.on('receiveMessage', (data) => {
-        if (data.senderId === myId) return;
-        if (chatMode === 'global' && data.mode === 'global') {
-           addMessage(data.text, false, data.senderId, data.senderName, data.senderIcon);
-        } 
-        else if (chatMode === 'private' && data.mode === 'private' && data.targetId === myId && currentFriendId === data.senderId) {
-           addMessage(data.text, false, data.senderId, data.senderName, data.senderIcon);
-        }
-      });
-    }
 
     let callInterval, callSeconds = 0, callTimeout;
     function formatTime(s) { return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`; }
@@ -674,23 +685,15 @@
     });
     
     document.getElementById('cancelCallBtn').addEventListener('click', () => { clearTimeout(callTimeout); document.getElementById('callingScreen').classList.remove('active'); chatScreen.classList.add('active'); });
-    document.getElementById('endCallBtn').addEventListener('click', () => { clearInterval(callInterval); document.getElementById('inCallScreen').classList.remove('active'); chatScreen.classList.add('active'); addMessage(`📞 通話が終了しました（${formatTime(callSeconds)}）`, true); });
+    document.getElementById('endCallBtn').addEventListener('click', () => { clearInterval(callInterval); document.getElementById('inCallScreen').classList.remove('active'); chatScreen.classList.add('active'); });
 
     document.getElementById('menuCopy').addEventListener('click', () => {
-      if(navigator.clipboard) {
-        navigator.clipboard.writeText(selectedText).then(() => alert('メッセージをコピーしました！'));
-      } else {
-        prompt('コピーしてください', selectedText);
-      }
+      if(navigator.clipboard) { navigator.clipboard.writeText(selectedText).then(() => alert('コピーしました')); }
       document.getElementById('contextMenu').style.display = 'none';
     });
 
     document.getElementById('menuShare').addEventListener('click', () => {
-      if (navigator.share) {
-        navigator.share({ title: 'メッセージ共有', text: selectedText }).catch(e => console.log('共有がキャンセルされました'));
-      } else {
-        prompt('以下のテキストをコピーして共有してください', selectedText);
-      }
+      if (navigator.share) { navigator.share({ text: selectedText }).catch(e => console.log('キャンセル')); }
       document.getElementById('contextMenu').style.display = 'none';
     });
 
@@ -710,16 +713,13 @@
       if (selectedSenderId && selectedSenderId !== myId && selectedSenderId !== 'システム') {
         document.getElementById('friendIdInput').value = selectedSenderId;
         document.getElementById('addFriendBtn').click();
-      } else {
-        alert('このユーザーは追加できません。');
-      }
+      } else { alert('追加できません。'); }
       document.getElementById('contextMenu').style.display = 'none';
     });
 
     document.getElementById('shareChatBtn').addEventListener('click', () => {
       const msgs = document.querySelectorAll('#msgArea .msg-row');
-      if (msgs.length === 0) return alert('共有するメッセージがありません。');
-      
+      if (msgs.length === 0) return;
       let exportText = `【${document.getElementById('chatTitle').textContent}】のチャット履歴\n\n`;
       msgs.forEach(row => {
         const isMine = row.classList.contains('mine');
@@ -728,20 +728,9 @@
         const text = row.querySelector('.msg').textContent;
         exportText += `${name}: ${text}\n`;
       });
-      
-      if (navigator.share) {
-        navigator.share({ title: 'チャット履歴', text: exportText }).catch(err => console.log('共有がキャンセルされました'));
-      } else {
-        if (navigator.clipboard) {
-          navigator.clipboard.writeText(exportText).then(() => {
-            alert('チャット履歴をクリップボードにコピーしました！\nそのままLINEなどに貼り付けて共有できます。');
-          }).catch(() => prompt('以下のテキストをコピーしてください', exportText));
-        } else {
-          prompt('以下のテキストをコピーしてください', exportText);
-        }
-      }
+      if (navigator.share) { navigator.share({ text: exportText }).catch(err => console.log('キャンセル')); } 
+      else if (navigator.clipboard) { navigator.clipboard.writeText(exportText).then(() => alert('コピーしました！')); }
     });
-
   </script>
 </body>
 </html>
