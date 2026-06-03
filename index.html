@@ -220,12 +220,7 @@
 
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
-
   <script>
-    // ★ サーバーへの接続を開始 ★
-    const socket = io();
-
     function getSafeData(key, defaultData) {
       try {
         const data = localStorage.getItem(key);
@@ -452,9 +447,7 @@
       
       let allUsers = getSafeData('chatApp_Users_v2', []);
       if (!allUsers.find(u => u.id === id)) {
-        // オンライン化に伴い、相手が未登録でも一旦リストに追加できるようにします
-        allUsers.push({ id: id, name: id, icon: '👤' });
-        localStorage.setItem('chatApp_Users_v2', JSON.stringify(allUsers));
+        return alert('そのIDは存在しません！正しいIDを入力してください。\n（※テスト用として taro_123, hanako_456, mario_777 が追加できます）');
       }
 
       let friends = getSafeData('chatApp_Friends', []);
@@ -588,7 +581,7 @@
       }
     }
 
-    // ★ オンライン対応のための送信処理 ★
+    // ★【修正】自動返信ボットの処理（通信部分を削除し、ローカルで完結するように戻しました）
     function handleSend() {
       const text = document.getElementById('chatTextInput').value.trim();
       if (text === '') return;
@@ -597,33 +590,14 @@
       addMessage(text, true); 
       document.getElementById('chatTextInput').value = '';
       
-      // サーバーへリアルタイムでメッセージを送信する
-      socket.emit('sendMessage', {
-        text: text,
-        senderId: myId,
-        senderName: myName,
-        targetId: chatMode === 'private' ? currentFriendId : 'global',
-        mode: chatMode
-      });
+      // プライベートチャットの場合、1秒後に自動で返信が来るようにする
+      if(chatMode === 'private') {
+          setTimeout(() => { addMessage(`「${text}」ですね。`, false, currentFriendId); }, 1000);
+      }
     }
     document.getElementById('sendBtn').addEventListener('click', handleSend);
     document.getElementById('chatTextInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(); });
     document.addEventListener('click', () => { document.getElementById('contextMenu').style.display = 'none'; });
-
-    // ★ サーバーからオンラインメッセージを受信した時のリアルタイム処理 ★
-    socket.on('receiveMessage', (data) => {
-      // 自分が送ったメッセージはスルーする
-      if (data.senderId === myId) return;
-
-      // 全体チャットを開いている時に、全体向けのメッセージが来たら表示
-      if (chatMode === 'global' && data.mode === 'global') {
-         addMessage(data.text, false, data.senderId);
-      } 
-      // 個別チャットを開いている時に、目の前の相手から自分宛てにメッセージが来たら表示
-      else if (chatMode === 'private' && data.mode === 'private' && data.targetId === myId && currentFriendId === data.senderId) {
-         addMessage(data.text, false, data.senderId);
-      }
-    });
 
     // ＝＝＝ 6. 通話機能（全体チャット対応版） ＝＝＝
     let callInterval, callSeconds = 0, callTimeout;
