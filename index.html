@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>チャット＆ビデオ通話アプリ(完全版)</title>
-  <!-- Jitsi Meet API (100人通話用) の読み込み -->
   <script src="https://meet.jit.si/external_api.js"></script>
   <style>
     /* ＝＝＝ 全体の基本設定 ＝＝＝ */
@@ -81,6 +80,9 @@
     .inc-btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; }
     .btn-answer { background: #27ae60; }
     .btn-reject { background: #c0392b; }
+
+    /* QRコード表示用モーダル追加 */
+    .qr-modal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 3000; text-align: center; display: none; flex-direction: column; gap: 15px; color: #333; font-weight: bold; width: 80%; max-width: 300px; }
     
     /* 全体通話画面用 */
     #jitsiContainer { flex: 1; width: 100%; background: #000; }
@@ -91,7 +93,6 @@
   <div class="app-container" id="appContainer">
     <div id="notification" class="notification"></div>
     
-    <!-- 着信ポップアップ -->
     <div id="incomingCallAlert" class="incoming-call-alert">
       <div>📞 <span id="incomingCallerName"></span>さんから着信中...</div>
       <div class="incoming-btns">
@@ -100,7 +101,13 @@
       </div>
     </div>
 
-    <!-- 1. 初期設定画面 -->
+    <div id="qrModal" class="qr-modal">
+      <div style="font-size: 18px;">📱 友達追加QRコード</div>
+      <div style="font-size: 12px; color: #666; font-weight: normal;">このコードを読み取ると、あなたを友達追加してチャットを開始できます。</div>
+      <img id="qrImage" src="" alt="QR Code" style="margin: 0 auto; display: block; width: 200px; height: 200px; border-radius: 8px; border: 1px solid #ccc;">
+      <button id="closeQrBtn" class="inc-btn btn-reject" style="width: 100%;">閉じる</button>
+    </div>
+
     <div id="loginScreen" class="screen active">
       <div class="header">
         <div id="weatherLogin" class="weather-widget">☁️ --℃</div>
@@ -121,7 +128,6 @@
       </div>
     </div>
 
-    <!-- 2. ホーム画面 -->
     <div id="homeScreen" class="screen">
       <div class="header">
         <div id="weatherHome" class="weather-widget">☁️ --℃</div>
@@ -135,6 +141,9 @@
           <div style="margin-bottom: 10px;">
             <button id="editNameBtn" class="edit-name-btn">✎ 名前変更</button>
             <button id="editIconBtn" class="edit-name-btn" style="background-color: #8e44ad;">🖼 画像変更</button>
+          </div>
+          <div style="margin-bottom: 10px;">
+            <button id="showQrBtn" class="edit-name-btn" style="background-color: #27ae60; padding: 8px 20px; font-size: 14px;">📱 マイQRコードを表示</button>
           </div>
 
           <div class="profile-id">ID: <span id="displayMyId"></span></div>
@@ -155,7 +164,6 @@
       </div>
     </div>
 
-    <!-- 3. 友達リスト -->
     <div id="friendsScreen" class="screen">
       <div class="header" style="background-color: #34495e;">
         <button id="backFromFriendsBtn" class="back-btn">◀ 戻る</button>
@@ -164,7 +172,6 @@
       <div class="content-area" id="friendsListArea"></div>
     </div>
 
-    <!-- 4. チャット画面 -->
     <div id="chatScreen" class="screen">
       <div class="header">
         <button id="backBtn" class="back-btn">◀ 戻る</button>
@@ -179,7 +186,6 @@
       </div>
     </div>
 
-    <!-- 5. 個人ビデオ通話画面 -->
     <div id="inCallScreen" class="screen call-theme">
       <div class="header" style="background: transparent;">
         <span style="visibility: hidden;">◀</span>
@@ -201,7 +207,6 @@
       </div>
     </div>
 
-    <!-- 6. 全体通話画面 -->
     <div id="globalCallScreen" class="screen call-theme">
       <div id="jitsiContainer"></div>
       <div style="padding: 15px; background: #2c3e50; text-align: center;">
@@ -262,14 +267,46 @@
       reader.readAsDataURL(file);
     }
     
+    // 【追加】URLパラメータから友達IDを追加してチャットを開く処理
+    function processUrlFriend(fId) {
+      if (fId === myId) {
+        alert("自分のQRコードを読み込みました");
+        return;
+      }
+      let f = getSafeData('chatApp_Friends', []); 
+      if(!f.includes(fId)) {
+        f.push(fId);
+        localStorage.setItem('chatApp_Friends', JSON.stringify(f)); 
+        alert(`${fId} さんを友達に追加しました！\nチャットを開始します。`);
+      }
+      // URLからパラメータを削除（リロード時の再実行を防ぐため）
+      window.history.replaceState({}, document.title, window.location.pathname);
+      startPrivateChat(fId);
+    }
+
     window.onload = () => {
+      // 【追加】URLSearchParams で ?friend=xxx を取得
+      const params = new URLSearchParams(window.location.search);
+      const friendIdFromUrl = params.get('friend');
+
       const sName = localStorage.getItem('chatApp_MyName'), sId = localStorage.getItem('chatApp_MyId'), sIcon = localStorage.getItem('chatApp_MyIcon');
+      
       if (sName && sId) {
         myName = sName; myId = sId; myIconData = sIcon || '👤';
         document.getElementById('displayMyName').textContent = myName; document.getElementById('displayMyId').textContent = myId;
         setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
         showScreen('home');
         listenForIncomingCalls();
+
+        // ログイン済みの状態でURLにパラメータがあればすぐ追加
+        if (friendIdFromUrl) {
+          processUrlFriend(friendIdFromUrl);
+        }
+      } else {
+        // 未ログイン状態でURLにパラメータがある場合は一時保存
+        if (friendIdFromUrl) {
+          window.pendingFriendId = friendIdFromUrl;
+        }
       }
     };
 
@@ -294,6 +331,21 @@
       }
     });
 
+    // 【追加】QRコード表示/非表示の制御
+    document.getElementById('showQrBtn').addEventListener('click', () => {
+      // 共有用URLの生成 (現在のURLに ?friend=自分のID を付与)
+      const shareUrl = window.location.origin + window.location.pathname + '?friend=' + encodeURIComponent(myId);
+      // api.qrserver.com を使ってURLからQRコード画像を生成
+      const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(shareUrl)}`;
+      
+      document.getElementById('qrImage').src = qrApiUrl;
+      document.getElementById('qrModal').style.display = 'flex';
+    });
+
+    document.getElementById('closeQrBtn').addEventListener('click', () => {
+      document.getElementById('qrModal').style.display = 'none';
+    });
+
     document.getElementById('iconPreview').addEventListener('click', () => document.getElementById('myIconUpload').click());
     document.getElementById('myIconUpload').addEventListener('change', (e) => {
       processImage(e.target.files[0], (dataUrl) => { myIconData = dataUrl; setIconDisplay(document.getElementById('iconPreview'), myIconData); });
@@ -307,6 +359,12 @@
       document.getElementById('displayMyName').textContent = myName; document.getElementById('displayMyId').textContent = myId;
       setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
       showScreen('home'); listenForIncomingCalls();
+
+      // 【追加】初回ログイン時に待機中の友達IDがあれば追加処理
+      if (window.pendingFriendId) {
+        processUrlFriend(window.pendingFriendId);
+        window.pendingFriendId = null;
+      }
     });
 
     document.getElementById('globalChatBtn').addEventListener('click', () => {
@@ -321,7 +379,6 @@
       currentRoomId = [myId, friendId].sort().join('_'); subscribeToChatRoom(currentRoomId);
     }
 
-    // 💡 エラー検知機能を追加！
     function subscribeToChatRoom(roomId) {
       if (chatUnsubscribe) chatUnsubscribe();
       document.getElementById('msgArea').innerHTML = '';
@@ -351,7 +408,6 @@
       msgArea.appendChild(div); msgArea.scrollTop = msgArea.scrollHeight;
     }
 
-    // 💡 送信エラー検知機能を追加！
     document.getElementById('sendBtn').addEventListener('click', async () => {
       const text = document.getElementById('chatTextInput').value.trim();
       if (!text) return; document.getElementById('chatTextInput').value = '';
