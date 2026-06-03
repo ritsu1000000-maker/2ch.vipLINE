@@ -220,7 +220,12 @@
 
   </div>
 
+  <script src="/socket.io/socket.io.js"></script>
+
   <script>
+    // ★サーバーへの接続を開始 ★
+    const socket = io();
+
     function getSafeData(key, defaultData) {
       try {
         const data = localStorage.getItem(key);
@@ -359,20 +364,18 @@
       }
     };
 
-    // ＝＝＝ 2. ログイン処理（重複ID・ひらがなチェック追加） ＝＝＝
+    // ＝＝＝ 2. ログイン処理 ＝＝＝
     document.getElementById('loginBtn').addEventListener('click', () => {
       const name = document.getElementById('myNameInput').value.trim();
       const id = document.getElementById('myIdInput').value.trim();
       if (name === '' || id === '') { alert('表示名とユーザーIDを入力してください！'); return; }
       
-      // ★追加: ひらがなが含まれているかのチェック
       if (id.match(/[\u3040-\u309F]/)) {
         alert('ユーザーIDに「ひらがな」は使用できません！英数字などで入力してください。');
         return;
       }
       
       let allUsers = getSafeData('chatApp_Users_v2', []);
-      
       if (allUsers.find(u => u.id === id)) {
         alert('そのIDはすでに使われています！別のIDに変更してください。');
         return;
@@ -409,21 +412,17 @@
       }
     });
 
-    // ＝＝＝ 3. ホーム画面でのID変更処理（ひらがなチェック追加） ＝＝＝
+    // ＝＝＝ 3. ホーム画面でのID変更処理 ＝＝＝
     document.getElementById('editIdBtn').addEventListener('click', () => {
-      // ★修正: 案内テキストを変更
       const newId = prompt('新しいユーザーIDを入力してください（ひらがな・重複不可）', myId);
       if (newId !== null && newId.trim() !== '' && newId.trim() !== myId) {
         const trimmedId = newId.trim();
-        
-        // ★追加: ひらがなが含まれているかのチェック
         if (trimmedId.match(/[\u3040-\u309F]/)) {
           alert('ユーザーIDに「ひらがな」は使用できません！英数字などで入力してください。');
           return;
         }
 
         let allUsers = getSafeData('chatApp_Users_v2', []);
-        
         if (allUsers.find(u => u.id === trimmedId)) {
           alert('そのIDはすでに使われています！別のIDを指定してください。');
           return;
@@ -448,9 +447,14 @@
       if (id === '') return alert('相手のIDを入力してください！');
       if (id === myId) return alert('自分自身のIDは追加できません！');
       
+      // ★オンラインで誰とでも繋がれるように、ID存在チェックを一時的に甘くするかは運用次第ですが、
+      // ここでは元のままとしておきます（相手が初期設定を終えていれば追加可能）
       let allUsers = getSafeData('chatApp_Users_v2', []);
       if (!allUsers.find(u => u.id === id)) {
-        return alert('そのIDは存在しません！正しいIDを入力してください。\n（※テスト用として taro_123, hanako_456, mario_777 が追加できます）');
+        // ★本来はサーバーに問い合わせるべきですが、今回は簡易的にローカル保存のまま進めます
+        // オンライン化に伴い、とりあえず追加はできるように許可します
+        allUsers.push({ id: id, name: id, icon: '👤' });
+        localStorage.setItem('chatApp_Users_v2', JSON.stringify(allUsers));
       }
 
       let friends = getSafeData('chatApp_Friends', []);
@@ -584,17 +588,44 @@
       }
     }
 
+    // ★【変更】送信処理（ボット返信を消し、サーバーへ送るように変更）★
     function handleSend() {
       const text = document.getElementById('chatTextInput').value.trim();
       if (text === '') return;
-      addMessage(text, true); document.getElementById('chatTextInput').value = '';
-      if(chatMode === 'private') {
-          setTimeout(() => { addMessage(`「${text}」ですね。`, false, currentFriendId); }, 1000);
-      }
+      
+      // 自分の画面にメッセージを表示
+      addMessage(text, true); 
+      document.getElementById('chatTextInput').value = '';
+      
+      // サーバーへメッセージを送信する
+      socket.emit('sendMessage', {
+        text: text,
+        senderId: myId,
+        senderName: myName,
+        targetId: chatMode === 'private' ? currentFriendId : 'global',
+        mode: chatMode
+      });
     }
+    
     document.getElementById('sendBtn').addEventListener('click', handleSend);
     document.getElementById('chatTextInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(); });
     document.addEventListener('click', () => { document.getElementById('contextMenu').style.display = 'none'; });
+
+    // ★【追加】サーバーからメッセージを受信した時の処理 ★
+    socket.on('receiveMessage', (data) => {
+      // 自分が送ったメッセージはすでに画面に表示しているので無視する
+      if (data.senderId === myId) return;
+
+      // 全体チャットで、受信したデータも全体向けの場合
+      if (chatMode === 'global' && data.mode === 'global') {
+         addMessage(data.text, false, data.senderId);
+      } 
+      // 自分宛てのプライベートメッセージで、ちょうどその相手とのチャットを開いている場合
+      else if (chatMode === 'private' && data.mode === 'private' && data.targetId === myId && currentFriendId === data.senderId) {
+         addMessage(data.text, false, data.senderId);
+      }
+      // ※ここに「チャット画面を開いていない時の通知処理」を追加することも可能です
+    });
 
     // ＝＝＝ 6. 通話機能 ＝＝＝
     let callInterval, callSeconds = 0, callTimeout;
