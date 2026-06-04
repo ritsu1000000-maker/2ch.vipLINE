@@ -61,8 +61,8 @@
     /* オンライン人数表示とメンバー一覧 */
     #onlineCountDisplay { font-size: 13px; background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 12px; margin-left: 10px; cursor: pointer; transition: background 0.2s; display: none; }
     #onlineCountDisplay:hover { background: rgba(0,0,0,0.6); }
-    #onlineMembersList { display: none; background: #fff; padding: 15px; border-bottom: 1px solid #ccc; max-height: 120px; overflow-y: auto; font-size: 14px; color: #333; gap: 10px; flex-wrap: wrap; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    .member-badge { display: inline-flex; align-items: center; background: #f1f1f1; padding: 5px 10px; border-radius: 20px; border: 1px solid #ddd; }
+    #onlineMembersList { display: none; background: #fff; padding: 15px; border-bottom: 1px solid #ccc; max-height: 120px; overflow-y: auto; gap: 10px; flex-wrap: wrap; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .member-badge { display: inline-flex; align-items: center; background: #f1f1f1; padding: 5px 10px; border-radius: 20px; border: 1px solid #ddd; font-size: 14px; color: #333; }
 
     /* ＝＝＝ 友達リスト ＝＝＝ */
     .link-btn { display: inline-block; background-color: #34495e; margin-top: 15px; text-align: center; }
@@ -331,7 +331,7 @@
       catch (e) { console.error("プロフィール保存エラー:", e); }
     }
 
-    /* ＝＝＝ オンライン人数・メンバー管理機能 ＝＝＝ */
+    /* ＝＝＝ オンライン人数・メンバー管理機能（入退室管理） ＝＝＝ */
     async function setOnlineStatus(roomId) {
       if (!myId) return;
       try {
@@ -406,6 +406,7 @@
     // 画面を閉じた時やリロード時にオンライン状態を削除
     window.addEventListener('beforeunload', () => { removeOnlineStatus(); });
 
+    /* ＝＝＝ 友達・チャット機能全般 ＝＝＝ */
     async function processUrlFriend(fId) {
       if (!fId) return;
       if (fId === myId) return alert("自分のIDです");
@@ -461,7 +462,7 @@
       
       subscribeToChatRoom(currentRoomId);
       
-      // 全ルームでオンライン登録・表示開始
+      // 入室した際にオンライン情報を登録し、監視を開始
       await setOnlineStatus(currentRoomId);
       subscribeOnlineCount(currentRoomId);
       
@@ -648,7 +649,7 @@
       document.getElementById('startGlobalCallBtn').style.display = 'none';
       subscribeToChatRoom(currentRoomId);
       
-      // 個人チャットでもオンライン登録・表示開始
+      // 個人チャットでもオンライン情報を登録し、監視を開始
       setOnlineStatus(currentRoomId);
       subscribeOnlineCount(currentRoomId);
     }
