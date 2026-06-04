@@ -236,7 +236,10 @@
           <h4 style="margin: 0 0 5px 0; text-align: left;">👤 友達を追加する</h4>
           <input type="text" id="friendIdInput" class="text-input" placeholder="相手のIDを入力" style="width:100%; margin-bottom:10px;">
           <button id="addFriendBtn" class="action-btn" style="width:100%; margin-bottom:8px;">検索</button>
-          <button id="openFriendsBtn" class="action-btn link-btn" style="width:100%; margin-top:0;">📋 友達リストを見る</button>
+          <div style="display: flex; gap: 8px; width: 100%;">
+            <button id="openFriendsBtn" class="action-btn link-btn" style="flex:1; margin-top:0; padding:10px 0; font-size:13px;">📋 友達リスト</button>
+            <button id="openRequestsBtn" class="action-btn link-btn" style="flex:1; margin-top:0; padding:10px 0; font-size:13px; background-color: #e67e22;">💌 申請リスト</button>
+          </div>
         </div>
       </div>
     </div>
@@ -301,6 +304,23 @@
         <span>📋 友達リスト</span><div style="width: 50px;"></div>
       </div>
       <div class="content-area" id="friendsListArea" style="align-items: stretch;"></div>
+    </div>
+
+    <div id="requestsScreen" class="screen">
+      <div class="header" style="background-color: #e67e22;">
+        <button id="backFromRequestsBtn" class="back-btn">◀ 戻る</button>
+        <span>💌 申請リスト</span><div style="width: 50px;"></div>
+      </div>
+      <div class="content-area" style="align-items: stretch; gap: 20px;">
+        <div class="section-box" style="border-left: 5px solid #3498db; padding: 10px;">
+          <h4 style="margin: 0 0 10px 0; text-align: left; font-size: 14px;">📥 申請された（受信）</h4>
+          <div id="receivedRequestsArea" style="display:flex; flex-direction:column; gap:8px;"></div>
+        </div>
+        <div class="section-box" style="border-left: 5px solid #95a5a6; padding: 10px;">
+          <h4 style="margin: 0 0 10px 0; text-align: left; font-size: 14px;">📤 申請した（送信）</h4>
+          <div id="sentRequestsArea" style="display:flex; flex-direction:column; gap:8px;"></div>
+        </div>
+      </div>
     </div>
 
     <div id="chatScreen" class="screen">
@@ -392,7 +412,7 @@
       userProfile: document.getElementById('userProfileScreen'), friends: document.getElementById('friendsScreen'), 
       chat: document.getElementById('chatScreen'), call: document.getElementById('inCallScreen'), 
       globalCall: document.getElementById('globalCallScreen'), settings: document.getElementById('settingsScreen'),
-      notifications: document.getElementById('notificationScreen')
+      notifications: document.getElementById('notificationScreen'), requests: document.getElementById('requestsScreen')
     };
     
     function showScreen(screenName) { 
@@ -439,7 +459,6 @@
     /* ＝＝＝ オンライン管理 ＝＝＝ */
     async function setOnlineStatus(roomId) {
       if (!myId) return;
-      // ★ id: myId を追加してオンラインリストからプロフィールを開けるように修正
       try { await setDoc(doc(db, "online_users", myId), { roomId: roomId, name: myName, icon: myIconData, timestamp: Date.now(), id: myId }); } catch (e) { }
     }
     async function removeOnlineStatus() {
@@ -458,7 +477,6 @@
           const data = docSnap.data();
           const badge = document.createElement('div'); badge.className = 'member-badge';
           
-          // ★ タップしたらプロフィール画面を開く設定
           if (docSnap.id !== myId) {
             badge.style.cursor = 'pointer';
             badge.title = 'プロフィールを見る';
@@ -498,7 +516,6 @@
         const btn = document.getElementById('sendRequestBtn');
         let f = getSafeData('chatApp_Friends', []); 
         
-        // ★ すでに友達の場合は「チャットを開く」ボタンに変更する
         if(f.includes(fId)) {
           btn.textContent = 'チャットを開く';
           btn.style.backgroundColor = '#128C7E';
@@ -507,7 +524,6 @@
             window.history.replaceState({}, document.title, window.location.pathname);
           };
         } else {
-          // ★ 友達でない場合は「リクエスト送信」ボタン
           btn.textContent = '友達リクエストを送信';
           btn.style.backgroundColor = '#27ae60';
           btn.onclick = async () => {
@@ -533,13 +549,19 @@
       window.history.replaceState({}, document.title, window.location.pathname);
     }
 
+    /* ＝＝＝ 申請リスト（受信）の監視 ＝＝＝ */
     function listenForFriendRequests() {
       const q = query(collection(db, "friend_requests"), where("receiverId", "==", myId));
       onSnapshot(q, (snapshot) => {
+        const receivedArea = document.getElementById('receivedRequestsArea');
+        if(receivedArea) receivedArea.innerHTML = '';
+        let pendingCount = 0;
+
         snapshot.docChanges().forEach((change) => {
           if (change.type === "added") {
             const req = change.doc.data(); const reqId = change.doc.id;
             if(req.status !== "pending") return;
+            // 画面上部のアラート
             document.getElementById('requestSenderName').textContent = req.senderName;
             document.getElementById('friendRequestAlert').style.display = 'flex';
             document.getElementById('acceptReqBtn').onclick = async () => {
@@ -556,12 +578,52 @@
             };
           }
         });
+
+        // 申請リスト画面の描画
+        snapshot.forEach(docSnap => {
+          const req = docSnap.data();
+          const reqId = docSnap.id;
+          if(req.status === "pending") {
+            pendingCount++;
+            if(receivedArea) {
+              const d = document.createElement('div');
+              d.className = 'friend-item';
+              d.innerHTML = `
+                <div class="friend-info">
+                  <div class="chat-icon" style="${req.senderIcon && req.senderIcon.startsWith('data:') ? 'background-image:url('+req.senderIcon+');' : ''}">${req.senderIcon && req.senderIcon.startsWith('data:') ? '' : (req.senderIcon || '👤')}</div>
+                  <div class="friend-id">${req.senderName}<br><span style="font-size:11px;color:#888;font-weight:normal;">ID: ${req.senderId}</span></div>
+                </div>
+                <div style="display:flex; gap:5px;">
+                  <button class="inc-btn btn-answer" style="padding: 6px 10px; font-size:12px;">承認</button>
+                  <button class="inc-btn btn-reject" style="padding: 6px 10px; font-size:12px; background:#e74c3c;">拒否</button>
+                </div>
+              `;
+              d.querySelector('.btn-answer').onclick = async () => {
+                let f = getSafeData('chatApp_Friends', []);
+                if(!f.includes(req.senderId)) f.push(req.senderId);
+                localStorage.setItem('chatApp_Friends', JSON.stringify(f));
+                await updateDoc(doc(db, "friend_requests", reqId), { status: "accepted" });
+                alert(`${req.senderName}さんと友達になりました！`);
+              };
+              d.querySelector('.btn-reject').onclick = async () => {
+                if(confirm('この申請を拒否しますか？')) await deleteDoc(doc(db, "friend_requests", reqId));
+              };
+              receivedArea.appendChild(d);
+            }
+          }
+        });
+        if(pendingCount === 0 && receivedArea) receivedArea.innerHTML = '<div style="font-size:12px; color:#666;">受信した申請はありません</div>';
       });
     }
 
+    /* ＝＝＝ 申請リスト（送信）の監視 ＝＝＝ */
     function listenForAcceptedRequests() {
       const q = query(collection(db, "friend_requests"), where("senderId", "==", myId));
       onSnapshot(q, (snapshot) => {
+        const sentArea = document.getElementById('sentRequestsArea');
+        if(sentArea) sentArea.innerHTML = '';
+        let pendingCount = 0;
+
         snapshot.docChanges().forEach(async (change) => {
           if (change.type === "modified" || change.type === "added") {
             const req = change.doc.data(); const reqId = change.doc.id;
@@ -573,6 +635,32 @@
             }
           }
         });
+
+        // 申請リスト画面の描画（送信済みの保留中）
+        snapshot.forEach(docSnap => {
+          const req = docSnap.data();
+          if(req.status === "pending") {
+            pendingCount++;
+            if(sentArea) {
+              const d = document.createElement('div');
+              d.className = 'friend-item';
+              d.innerHTML = `
+                <div class="friend-info">
+                  <div class="chat-icon">👤</div>
+                  <div class="friend-id" style="font-size: 14px;">ID: ${req.receiverId}<br><span style="font-size:11px;color:#888;font-weight:normal;">承認待ち...</span></div>
+                </div>
+                <button class="delete-btn" style="background:#e74c3c;">取消</button>
+              `;
+              d.querySelector('.delete-btn').onclick = async () => {
+                 if(confirm('申請を取り消しますか？')) {
+                   await deleteDoc(doc(db, "friend_requests", docSnap.id));
+                 }
+              };
+              sentArea.appendChild(d);
+            }
+          }
+        });
+        if(pendingCount === 0 && sentArea) sentArea.innerHTML = '<div style="font-size:12px; color:#666;">送信した申請はありません</div>';
       });
     }
 
@@ -751,20 +839,17 @@
         snapshot.docChanges().forEach((change) => {
           if (change.type === "added") {
             const data = change.doc.data();
-            // ★ senderId を renderMessage に渡すように修正
             renderMessage(data.text, data.senderId === myId, data.senderName, data.senderIcon, data.createdAt, data.imageUrl, data.senderId);
           }
         });
       }, (error) => { console.error("チャット読み込みエラー:", error); });
     }
 
-    // ★ renderMessage に senderId 引数を追加し、タップでプロフィールを開けるように修正
     function renderMessage(text, isMine, senderName, senderIcon, createdAt, imageUrl, senderId) {
       const msgArea = document.getElementById('msgArea');
       const div = document.createElement('div'); div.className = `msg-row ${isMine ? 'mine' : 'other'}`;
       const iconDiv = document.createElement('div'); iconDiv.className = 'chat-icon'; setIconDisplay(iconDiv, senderIcon);
       
-      // ★ 自分以外のアイコンがタップされたらプロフィール画面を開く
       if (!isMine && senderId) {
         iconDiv.style.cursor = 'pointer';
         iconDiv.title = 'プロフィールを見る';
@@ -790,7 +875,6 @@
       msgArea.scrollTop = msgArea.scrollHeight;
     }
 
-    /* ＝＝＝ 画像やテキスト送信時に相手に通知(Firestore)を作成 ＝＝＝ */
     document.getElementById('imageSendBtn').addEventListener('click', () => { document.getElementById('chatImageInput').click(); });
     document.getElementById('chatImageInput').addEventListener('change', (e) => {
       const file = e.target.files[0]; if (!file) return;
@@ -862,6 +946,9 @@
     });
     
     document.getElementById('backFromFriendsBtn').addEventListener('click', () => showScreen('home'));
+    
+    document.getElementById('openRequestsBtn').addEventListener('click', () => showScreen('requests'));
+    document.getElementById('backFromRequestsBtn').addEventListener('click', () => showScreen('home'));
 
     /* ＝＝＝ 通話関連 ＝＝＝ */
     document.getElementById('startGlobalCallBtn').addEventListener('click', () => {
