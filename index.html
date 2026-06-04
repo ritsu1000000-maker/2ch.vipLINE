@@ -776,6 +776,16 @@
       }
     });
 
+    // ＝＝＝ 追加：エンターキーで送信 ＝＝＝
+    document.getElementById('chatTextInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        // 変換中のエンターは無視
+        if (e.isComposing) return;
+        document.getElementById('sendBtn').click();
+      }
+    });
+    // ＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+
     // --- チャットルームからの退出処理 ---
     document.getElementById('backBtn').addEventListener('click', () => { 
       removeOnlineStatus(); // ルーム退出時にオンライン状態を消す
