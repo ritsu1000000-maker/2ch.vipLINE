@@ -58,8 +58,11 @@
     .back-btn { background: none; border: none; color: white; font-size: 18px; cursor: pointer; }
     .header-icon-btn { background: none; border: none; color: white; font-size: 22px; cursor: pointer; margin-left: 10px; }
     
-    /* オンライン人数表示 */
-    #onlineCountDisplay { font-size: 13px; background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 12px; margin-left: 10px; display: none; }
+    /* オンライン人数表示とメンバー一覧 */
+    #onlineCountDisplay { font-size: 13px; background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 12px; margin-left: 10px; cursor: pointer; transition: background 0.2s; display: none; }
+    #onlineCountDisplay:hover { background: rgba(0,0,0,0.6); }
+    #onlineMembersList { display: none; background: #fff; padding: 15px; border-bottom: 1px solid #ccc; max-height: 120px; overflow-y: auto; font-size: 14px; color: #333; gap: 10px; flex-wrap: wrap; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .member-badge { display: inline-flex; align-items: center; background: #f1f1f1; padding: 5px 10px; border-radius: 20px; border: 1px solid #ddd; }
 
     /* ＝＝＝ 友達リスト ＝＝＝ */
     .link-btn { display: inline-block; background-color: #34495e; margin-top: 15px; text-align: center; }
@@ -213,9 +216,9 @@
     <div id="chatScreen" class="screen">
       <div class="header">
         <button id="backBtn" class="back-btn">◀ 戻る</button>
-        <div>
+        <div style="display: flex; flex-direction: column; align-items: center;">
           <span id="chatTitle">チャット</span>
-          <span id="onlineCountDisplay">🟢 --人</span>
+          <span id="onlineCountDisplay" title="タップしてメンバーを表示">🟢 --人</span>
         </div>
         <div style="display: flex;">
           <button id="shareRoomBtn" class="header-icon-btn" title="共有URLを表示">🔗</button>
@@ -223,6 +226,9 @@
           <button id="startGlobalCallBtn" class="header-icon-btn" title="全体通話" style="display:none; font-size: 26px;">📞</button>
         </div>
       </div>
+      
+      <div id="onlineMembersList"></div>
+
       <div class="messages" id="msgArea"></div>
       
       <div class="chat-input-area">
@@ -325,31 +331,78 @@
       catch (e) { console.error("プロフィール保存エラー:", e); }
     }
 
-    /* ＝＝＝ オンライン人数管理機能 ＝＝＝ */
+    /* ＝＝＝ オンライン人数・メンバー管理機能 ＝＝＝ */
     async function setOnlineStatus(roomId) {
       if (!myId) return;
       try {
-        await setDoc(doc(db, "online_users", myId), { roomId: roomId, timestamp: Date.now() });
+        await setDoc(doc(db, "online_users", myId), { 
+          roomId: roomId, 
+          name: myName, // 名前を保存
+          icon: myIconData, // アイコンを保存
+          timestamp: Date.now() 
+        });
       } catch (e) { console.error("オンライン状態登録エラー:", e); }
     }
+    
     async function removeOnlineStatus() {
       if (!myId) return;
       try { await deleteDoc(doc(db, "online_users", myId)); } catch (e) {}
     }
+    
     function subscribeOnlineCount(roomId) {
       if(onlineUnsubscribe) onlineUnsubscribe();
       const q = query(collection(db, "online_users"), where("roomId", "==", roomId));
+      
       onlineUnsubscribe = onSnapshot(q, (snapshot) => {
         const count = snapshot.size;
         const display = document.getElementById('onlineCountDisplay');
-        if(roomId === 'global_room') {
-          display.style.display = 'inline-block';
-          display.textContent = `🟢 ${count}人`;
-        } else {
-          display.style.display = 'none';
-        }
+        const listDiv = document.getElementById('onlineMembersList');
+        
+        display.style.display = 'inline-block';
+        display.textContent = `🟢 ${count}人`;
+        
+        // メンバーリストの生成
+        listDiv.innerHTML = '';
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          const badge = document.createElement('div');
+          badge.className = 'member-badge';
+          
+          const iconSpan = document.createElement('span');
+          iconSpan.style.width = '24px'; iconSpan.style.height = '24px';
+          iconSpan.style.borderRadius = '50%'; iconSpan.style.display = 'inline-flex';
+          iconSpan.style.alignItems = 'center'; iconSpan.style.justifyContent = 'center';
+          iconSpan.style.backgroundSize = 'cover'; iconSpan.style.backgroundPosition = 'center';
+          iconSpan.style.marginRight = '8px'; iconSpan.style.backgroundColor = '#bdc3c7';
+          iconSpan.style.fontSize = '14px';
+          
+          if(data.icon && data.icon.startsWith('data:')){
+            iconSpan.style.backgroundImage = `url(${data.icon})`;
+          } else {
+            iconSpan.textContent = data.icon || '👤';
+          }
+          
+          const nameSpan = document.createElement('span');
+          nameSpan.style.fontWeight = 'bold';
+          nameSpan.textContent = data.name || '名無し';
+          
+          badge.appendChild(iconSpan);
+          badge.appendChild(nameSpan);
+          listDiv.appendChild(badge);
+        });
       });
     }
+
+    // メンバー一覧の表示切替イベント
+    document.getElementById('onlineCountDisplay').addEventListener('click', () => {
+      const listDiv = document.getElementById('onlineMembersList');
+      if (listDiv.style.display === 'flex') {
+        listDiv.style.display = 'none';
+      } else {
+        listDiv.style.display = 'flex';
+      }
+    });
+
     // 画面を閉じた時やリロード時にオンライン状態を削除
     window.addEventListener('beforeunload', () => { removeOnlineStatus(); });
 
@@ -395,6 +448,7 @@
       chatMode = (roomId === 'global_room') ? 'global' : 'group';
       currentRoomId = roomId;
       showScreen('chat');
+      document.getElementById('onlineMembersList').style.display = 'none'; // 入室時は一旦閉じる
       
       if (roomId === 'global_room') {
         document.getElementById('chatTitle').textContent = '🌍 全体チャット';
@@ -407,7 +461,7 @@
       
       subscribeToChatRoom(currentRoomId);
       
-      // 全体チャットならオンライン登録・表示開始
+      // 全ルームでオンライン登録・表示開始
       await setOnlineStatus(currentRoomId);
       subscribeOnlineCount(currentRoomId);
       
@@ -587,11 +641,16 @@
       chatMode = 'private'; 
       currentRoomId = [myId, friendId].sort().join('_');
       showScreen('chat'); 
+      document.getElementById('onlineMembersList').style.display = 'none'; // 入室時は一旦閉じる
+      
       document.getElementById('chatTitle').textContent = friendId;
-      document.getElementById('onlineCountDisplay').style.display = 'none'; // 個人チャットは人数非表示
       document.getElementById('startCallBtn').style.display = 'block'; 
       document.getElementById('startGlobalCallBtn').style.display = 'none';
       subscribeToChatRoom(currentRoomId);
+      
+      // 個人チャットでもオンライン登録・表示開始
+      setOnlineStatus(currentRoomId);
+      subscribeOnlineCount(currentRoomId);
     }
 
     function subscribeToChatRoom(roomId) {
