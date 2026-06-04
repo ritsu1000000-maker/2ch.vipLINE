@@ -188,7 +188,7 @@
           <div class="input-label">ひとこと</div>
           <input type="text" id="myStatusInput" class="text-input" placeholder="例: よろしくお願いします！">
           
-          <div class="input-label">ユーザーID（重複不可）</div>
+          <div class="input-label">ユーザーID（半角英数字・重複不可）</div>
           <input type="text" id="myIdInput" class="text-input" placeholder="例: taro_123">
           
           <button id="loginBtn" class="action-btn" style="margin-top: 5px;">登録してはじめる</button>
@@ -392,7 +392,7 @@
       userProfile: document.getElementById('userProfileScreen'), friends: document.getElementById('friendsScreen'), 
       chat: document.getElementById('chatScreen'), call: document.getElementById('inCallScreen'), 
       globalCall: document.getElementById('globalCallScreen'), settings: document.getElementById('settingsScreen'),
-      notifications: document.getElementById('notificationScreen') // ★追加
+      notifications: document.getElementById('notificationScreen')
     };
     
     function showScreen(screenName) { 
@@ -554,7 +554,7 @@
       });
     }
 
-    /* ＝＝＝ ★追加：通知（最新メッセージ）を監視・表示する機能 ＝＝＝ */
+    /* ＝＝＝ 通知（最新メッセージ）を監視・表示 ＝＝＝ */
     function listenForNotifications() {
       if(notificationUnsubscribe) notificationUnsubscribe();
       const q = query(collection(db, "users", myId, "notifications"), orderBy("createdAt", "desc"));
@@ -572,12 +572,9 @@
           const data = docSnap.data();
           if(!data.read) unreadCount++;
           
-          // 通知項目（UI作成）
           const item = document.createElement('div');
-          // data.read が false の場合は .unread クラスを付ける（青背景になる）
           item.className = `friend-item ${data.read ? '' : 'unread'}`;
           
-          // 時間のフォーマット
           const dateObj = new Date(data.createdAt);
           const timeString = `${dateObj.getMonth()+1}/${dateObj.getDate()} ${dateObj.getHours().toString().padStart(2,'0')}:${dateObj.getMinutes().toString().padStart(2,'0')}`;
 
@@ -594,7 +591,6 @@
             ${!data.read ? '<span class="unread-dot">🔴</span>' : ''}
           `;
 
-          // タップ（クリック）で既読にし、チャットルームへ移動
           item.onclick = async () => {
             if(!data.read) {
               item.classList.remove('unread');
@@ -610,7 +606,6 @@
           listArea.appendChild(item);
         });
         
-        // ホーム画面の通知バッジの数字と表示切り替え
         const badge = document.getElementById('homeNotificationBadge');
         if(unreadCount > 0) {
           badge.style.display = 'inline-block';
@@ -621,15 +616,8 @@
       });
     }
 
-    // 通知画面を開くボタン
-    document.getElementById('openNotificationsBtn').addEventListener('click', () => {
-      showScreen('notifications');
-    });
-    // 通知画面からホームへ戻るボタン
-    document.getElementById('backFromNotificationsBtn').addEventListener('click', () => {
-      showScreen('home');
-    });
-
+    document.getElementById('openNotificationsBtn').addEventListener('click', () => { showScreen('notifications'); });
+    document.getElementById('backFromNotificationsBtn').addEventListener('click', () => { showScreen('home'); });
 
     window.onload = () => {
       const params = new URLSearchParams(window.location.search);
@@ -648,7 +636,7 @@
         listenForIncomingCalls();
         listenForFriendRequests();
         listenForAcceptedRequests();
-        listenForNotifications(); // ★通知の読み込みを開始
+        listenForNotifications();
 
         if (friendIdFromUrl) processUrlFriend(friendIdFromUrl);
         if (roomFromUrl) processUrlRoom(roomFromUrl);
@@ -707,16 +695,44 @@
     document.getElementById('iconPreview').addEventListener('click', () => document.getElementById('myIconUpload').click());
     document.getElementById('myIconUpload').addEventListener('change', (e) => { processImage(e.target.files[0], (dataUrl) => { myIconData = dataUrl; setIconDisplay(document.getElementById('iconPreview'), myIconData); }); });
 
+    /* ＝＝＝ ★修正箇所：ログイン時のID重複チェックを追加 ＝＝＝ */
     document.getElementById('loginBtn').addEventListener('click', async () => {
-      const n = document.getElementById('myNameInput').value.trim(); const id = document.getElementById('myIdInput').value.trim(); const s = document.getElementById('myStatusInput').value.trim();
-      if (!n || !id) return alert('入力してください');
+      const n = document.getElementById('myNameInput').value.trim(); 
+      const id = document.getElementById('myIdInput').value.trim(); 
+      const s = document.getElementById('myStatusInput').value.trim();
+      
+      if (!n || !id) return alert('名前とIDを入力してください');
+      
+      // IDの形式チェック（URLやデータベースでバグを起こさないための安全対策）
+      if (!/^[a-zA-Z0-9_]+$/.test(id)) {
+        return alert('ユーザーIDは半角英数字とアンダーバー(_)のみ使用できます');
+      }
+
+      // ID重複チェック（すでに誰かがそのIDを使っているか確認）
+      try {
+        const userDoc = await getDoc(doc(db, "users", id));
+        if (userDoc.exists()) {
+          return alert('このユーザーIDは既に使われています。別のIDを入力してください。');
+        }
+      } catch (error) {
+        console.error("ID確認エラー:", error);
+        return alert('エラーが発生しました。通信環境を確認してください。');
+      }
+
+      // 重複していなければ登録してはじめる
       myName = n; myId = id; myStatus = s;
-      localStorage.setItem('chatApp_MyName', myName); localStorage.setItem('chatApp_MyId', myId); 
-      localStorage.setItem('chatApp_MyIcon', myIconData); localStorage.setItem('chatApp_MyStatus', myStatus);
-      document.getElementById('displayMyName').textContent = myName; document.getElementById('displayMyId').textContent = myId; document.getElementById('displayMyStatus').textContent = myStatus;
+      localStorage.setItem('chatApp_MyName', myName); 
+      localStorage.setItem('chatApp_MyId', myId); 
+      localStorage.setItem('chatApp_MyIcon', myIconData); 
+      localStorage.setItem('chatApp_MyStatus', myStatus);
+      
+      document.getElementById('displayMyName').textContent = myName; 
+      document.getElementById('displayMyId').textContent = myId; 
+      document.getElementById('displayMyStatus').textContent = myStatus;
       setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
       
-      await saveProfileToDB(); showScreen('home'); 
+      await saveProfileToDB(); 
+      showScreen('home'); 
       listenForIncomingCalls(); listenForFriendRequests(); listenForAcceptedRequests(); listenForNotifications();
 
       if (window.pendingFriendId) { processUrlFriend(window.pendingFriendId); window.pendingFriendId = null; }
@@ -773,7 +789,6 @@
       msgArea.scrollTop = msgArea.scrollHeight;
     }
 
-    /* ＝＝＝ ★追加：画像やテキスト送信時に相手に通知(Firestore)を作成 ＝＝＝ */
     document.getElementById('imageSendBtn').addEventListener('click', () => { document.getElementById('chatImageInput').click(); });
     document.getElementById('chatImageInput').addEventListener('change', (e) => {
       const file = e.target.files[0]; if (!file) return;
@@ -783,8 +798,6 @@
         const imageUrl = event.target.result;
         try {
           await addDoc(collection(db, "rooms", currentRoomId, "messages"), { text: "", imageUrl: imageUrl, senderId: myId, senderName: myName, senderIcon: myIconData, createdAt: Date.now() });
-          
-          // 相手に通知を発行（個人チャットのみ）
           if(chatMode === 'private') {
             const friendId = currentRoomId.replace(myId, '').replace('_', '');
             await addDoc(collection(db, "users", friendId, "notifications"), {
@@ -801,8 +814,6 @@
       if (!text) return; document.getElementById('chatTextInput').value = '';
       try {
         await addDoc(collection(db, "rooms", currentRoomId, "messages"), { text: text, senderId: myId, senderName: myName, senderIcon: myIconData, createdAt: Date.now() });
-        
-        // 相手に通知を発行（個人チャットのみ）
         if(chatMode === 'private') {
           const friendId = currentRoomId.replace(myId, '').replace('_', '');
           await addDoc(collection(db, "users", friendId, "notifications"), {
