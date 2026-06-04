@@ -65,7 +65,7 @@
 
     .my-profile-display { background-color: #e5ddd5; padding: 15px 20px; border-radius: 20px; text-align: center; border: 2px solid #075e54; display: inline-block; margin-bottom: 10px; position: relative; width: 90%; }
     .profile-name { font-size: 20px; font-weight: bold; color: #333; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-    .profile-status { font-size: 13px; color: #555; margin-bottom: 12px; word-break: break-word; }
+    .profile-status { font-size: 13px; color: #555; margin-bottom: 12px; word-break: break-word; background: rgba(255,255,255,0.7); padding: 8px; border-radius: 8px; }
     .profile-id { font-size: 13px; color: #666; }
     .edit-name-btn { background-color: #7f8c8d; color: white; border: none; padding: 8px 15px; border-radius: 20px; font-size: 13px; cursor: pointer; font-weight: bold; margin: 3px 0; width: 100%; max-width: 220px; }
     
@@ -188,7 +188,7 @@
           <div class="input-label">ひとこと</div>
           <input type="text" id="myStatusInput" class="text-input" placeholder="例: よろしくお願いします！">
           
-          <div class="input-label">ユーザーID（半角英数字・重複不可）</div>
+          <div class="input-label">ユーザーID（重複不可）</div>
           <input type="text" id="myIdInput" class="text-input" placeholder="例: taro_123">
           
           <button id="loginBtn" class="action-btn" style="margin-top: 5px;">登録してはじめる</button>
@@ -439,7 +439,8 @@
     /* ＝＝＝ オンライン管理 ＝＝＝ */
     async function setOnlineStatus(roomId) {
       if (!myId) return;
-      try { await setDoc(doc(db, "online_users", myId), { roomId: roomId, name: myName, icon: myIconData, timestamp: Date.now() }); } catch (e) { }
+      // ★ id: myId を追加してオンラインリストからプロフィールを開けるように修正
+      try { await setDoc(doc(db, "online_users", myId), { roomId: roomId, name: myName, icon: myIconData, timestamp: Date.now(), id: myId }); } catch (e) { }
     }
     async function removeOnlineStatus() {
       if (!myId) return;
@@ -456,6 +457,14 @@
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
           const badge = document.createElement('div'); badge.className = 'member-badge';
+          
+          // ★ タップしたらプロフィール画面を開く設定
+          if (docSnap.id !== myId) {
+            badge.style.cursor = 'pointer';
+            badge.title = 'プロフィールを見る';
+            badge.onclick = () => { processUrlFriend(docSnap.id); };
+          }
+
           const iconSpan = document.createElement('span');
           iconSpan.style.width = '20px'; iconSpan.style.height = '20px'; iconSpan.style.borderRadius = '50%'; iconSpan.style.display = 'inline-flex';
           iconSpan.style.alignItems = 'center'; iconSpan.style.justifyContent = 'center'; iconSpan.style.backgroundSize = 'cover'; iconSpan.style.backgroundPosition = 'center';
@@ -473,28 +482,41 @@
     });
     window.addEventListener('beforeunload', () => { removeOnlineStatus(); });
 
-    /* ＝＝＝ 友達＆トーク ＝＝＝ */
+    /* ＝＝＝ 友達＆プロフィール開く処理 ＝＝＝ */
     async function processUrlFriend(fId) {
       if (!fId) return;
       if (fId === myId) return alert("自分のIDです");
-      let f = getSafeData('chatApp_Friends', []); 
-      if(f.includes(fId)) {
-        alert("すでに友達です。チャットを開始します。");
-        startPrivateChat(fId); window.history.replaceState({}, document.title, window.location.pathname); return;
-      }
+      
       const userDoc = await getDoc(doc(db, "users", fId));
       if (userDoc.exists()) {
         const data = userDoc.data();
         document.getElementById('targetUserName').textContent = data.name;
         document.getElementById('targetUserId').textContent = data.id;
-        document.getElementById('targetUserStatus').textContent = data.status || '';
+        document.getElementById('targetUserStatus').textContent = data.status || '（一言メッセージは未設定です）';
         setIconDisplay(document.getElementById('targetUserIcon'), data.icon);
-        document.getElementById('sendRequestBtn').onclick = async () => {
-          try {
-            await addDoc(collection(db, "friend_requests"), { senderId: myId, senderName: myName, senderIcon: myIconData, receiverId: data.id, status: "pending", createdAt: Date.now() });
-            alert("友達リクエストを送信しました！"); showScreen('home');
-          } catch(e) { alert("送信に失敗しました。"); }
-        };
+        
+        const btn = document.getElementById('sendRequestBtn');
+        let f = getSafeData('chatApp_Friends', []); 
+        
+        // ★ すでに友達の場合は「チャットを開く」ボタンに変更する
+        if(f.includes(fId)) {
+          btn.textContent = 'チャットを開く';
+          btn.style.backgroundColor = '#128C7E';
+          btn.onclick = () => {
+            startPrivateChat(fId);
+            window.history.replaceState({}, document.title, window.location.pathname);
+          };
+        } else {
+          // ★ 友達でない場合は「リクエスト送信」ボタン
+          btn.textContent = '友達リクエストを送信';
+          btn.style.backgroundColor = '#27ae60';
+          btn.onclick = async () => {
+            try {
+              await addDoc(collection(db, "friend_requests"), { senderId: myId, senderName: myName, senderIcon: myIconData, receiverId: data.id, status: "pending", createdAt: Date.now() });
+              alert("友達リクエストを送信しました！"); showScreen('home');
+            } catch(e) { alert("送信に失敗しました。"); }
+          };
+        }
         showScreen('userProfile');
       } else { alert("ユーザーが見つかりません。"); showScreen('home'); }
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -554,7 +576,7 @@
       });
     }
 
-    /* ＝＝＝ 通知（最新メッセージ）を監視・表示 ＝＝＝ */
+    /* ＝＝＝ 通知（最新メッセージ）を監視・表示する機能 ＝＝＝ */
     function listenForNotifications() {
       if(notificationUnsubscribe) notificationUnsubscribe();
       const q = query(collection(db, "users", myId, "notifications"), orderBy("createdAt", "desc"));
@@ -633,10 +655,7 @@
         setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
         saveProfileToDB(); showScreen('home');
         
-        listenForIncomingCalls();
-        listenForFriendRequests();
-        listenForAcceptedRequests();
-        listenForNotifications();
+        listenForIncomingCalls(); listenForFriendRequests(); listenForAcceptedRequests(); listenForNotifications();
 
         if (friendIdFromUrl) processUrlFriend(friendIdFromUrl);
         if (roomFromUrl) processUrlRoom(roomFromUrl);
@@ -695,44 +714,16 @@
     document.getElementById('iconPreview').addEventListener('click', () => document.getElementById('myIconUpload').click());
     document.getElementById('myIconUpload').addEventListener('change', (e) => { processImage(e.target.files[0], (dataUrl) => { myIconData = dataUrl; setIconDisplay(document.getElementById('iconPreview'), myIconData); }); });
 
-    /* ＝＝＝ ★修正箇所：ログイン時のID重複チェックを追加 ＝＝＝ */
     document.getElementById('loginBtn').addEventListener('click', async () => {
-      const n = document.getElementById('myNameInput').value.trim(); 
-      const id = document.getElementById('myIdInput').value.trim(); 
-      const s = document.getElementById('myStatusInput').value.trim();
-      
-      if (!n || !id) return alert('名前とIDを入力してください');
-      
-      // IDの形式チェック（URLやデータベースでバグを起こさないための安全対策）
-      if (!/^[a-zA-Z0-9_]+$/.test(id)) {
-        return alert('ユーザーIDは半角英数字とアンダーバー(_)のみ使用できます');
-      }
-
-      // ID重複チェック（すでに誰かがそのIDを使っているか確認）
-      try {
-        const userDoc = await getDoc(doc(db, "users", id));
-        if (userDoc.exists()) {
-          return alert('このユーザーIDは既に使われています。別のIDを入力してください。');
-        }
-      } catch (error) {
-        console.error("ID確認エラー:", error);
-        return alert('エラーが発生しました。通信環境を確認してください。');
-      }
-
-      // 重複していなければ登録してはじめる
+      const n = document.getElementById('myNameInput').value.trim(); const id = document.getElementById('myIdInput').value.trim(); const s = document.getElementById('myStatusInput').value.trim();
+      if (!n || !id) return alert('入力してください');
       myName = n; myId = id; myStatus = s;
-      localStorage.setItem('chatApp_MyName', myName); 
-      localStorage.setItem('chatApp_MyId', myId); 
-      localStorage.setItem('chatApp_MyIcon', myIconData); 
-      localStorage.setItem('chatApp_MyStatus', myStatus);
-      
-      document.getElementById('displayMyName').textContent = myName; 
-      document.getElementById('displayMyId').textContent = myId; 
-      document.getElementById('displayMyStatus').textContent = myStatus;
+      localStorage.setItem('chatApp_MyName', myName); localStorage.setItem('chatApp_MyId', myId); 
+      localStorage.setItem('chatApp_MyIcon', myIconData); localStorage.setItem('chatApp_MyStatus', myStatus);
+      document.getElementById('displayMyName').textContent = myName; document.getElementById('displayMyId').textContent = myId; document.getElementById('displayMyStatus').textContent = myStatus;
       setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
       
-      await saveProfileToDB(); 
-      showScreen('home'); 
+      await saveProfileToDB(); showScreen('home'); 
       listenForIncomingCalls(); listenForFriendRequests(); listenForAcceptedRequests(); listenForNotifications();
 
       if (window.pendingFriendId) { processUrlFriend(window.pendingFriendId); window.pendingFriendId = null; }
@@ -760,16 +751,26 @@
         snapshot.docChanges().forEach((change) => {
           if (change.type === "added") {
             const data = change.doc.data();
-            renderMessage(data.text, data.senderId === myId, data.senderName, data.senderIcon, data.createdAt, data.imageUrl);
+            // ★ senderId を renderMessage に渡すように修正
+            renderMessage(data.text, data.senderId === myId, data.senderName, data.senderIcon, data.createdAt, data.imageUrl, data.senderId);
           }
         });
       }, (error) => { console.error("チャット読み込みエラー:", error); });
     }
 
-    function renderMessage(text, isMine, senderName, senderIcon, createdAt, imageUrl) {
+    // ★ renderMessage に senderId 引数を追加し、タップでプロフィールを開けるように修正
+    function renderMessage(text, isMine, senderName, senderIcon, createdAt, imageUrl, senderId) {
       const msgArea = document.getElementById('msgArea');
       const div = document.createElement('div'); div.className = `msg-row ${isMine ? 'mine' : 'other'}`;
       const iconDiv = document.createElement('div'); iconDiv.className = 'chat-icon'; setIconDisplay(iconDiv, senderIcon);
+      
+      // ★ 自分以外のアイコンがタップされたらプロフィール画面を開く
+      if (!isMine && senderId) {
+        iconDiv.style.cursor = 'pointer';
+        iconDiv.title = 'プロフィールを見る';
+        iconDiv.onclick = () => { processUrlFriend(senderId); };
+      }
+
       const wrapper = document.createElement('div'); wrapper.className = `msg-wrapper ${isMine ? 'mine' : 'other'}`;
       if (!isMine) { const nameDiv = document.createElement('div'); nameDiv.className = 'sender-name'; nameDiv.textContent = senderName; wrapper.appendChild(nameDiv); }
       const msgDiv = document.createElement('div'); msgDiv.className = `msg ${isMine ? 'my-msg' : 'bot-msg'}`; 
@@ -789,6 +790,7 @@
       msgArea.scrollTop = msgArea.scrollHeight;
     }
 
+    /* ＝＝＝ 画像やテキスト送信時に相手に通知(Firestore)を作成 ＝＝＝ */
     document.getElementById('imageSendBtn').addEventListener('click', () => { document.getElementById('chatImageInput').click(); });
     document.getElementById('chatImageInput').addEventListener('change', (e) => {
       const file = e.target.files[0]; if (!file) return;
@@ -798,6 +800,7 @@
         const imageUrl = event.target.result;
         try {
           await addDoc(collection(db, "rooms", currentRoomId, "messages"), { text: "", imageUrl: imageUrl, senderId: myId, senderName: myName, senderIcon: myIconData, createdAt: Date.now() });
+          
           if(chatMode === 'private') {
             const friendId = currentRoomId.replace(myId, '').replace('_', '');
             await addDoc(collection(db, "users", friendId, "notifications"), {
@@ -814,6 +817,7 @@
       if (!text) return; document.getElementById('chatTextInput').value = '';
       try {
         await addDoc(collection(db, "rooms", currentRoomId, "messages"), { text: text, senderId: myId, senderName: myName, senderIcon: myIconData, createdAt: Date.now() });
+        
         if(chatMode === 'private') {
           const friendId = currentRoomId.replace(myId, '').replace('_', '');
           await addDoc(collection(db, "users", friendId, "notifications"), {
