@@ -250,8 +250,7 @@
         <span>🔔 通知・メッセージ</span>
         <div style="width: 50px;"></div>
       </div>
-      <div class="content-area" id="notificationListArea" style="gap: 8px; justify-content: flex-start; align-items: stretch;">
-        </div>
+      <div class="content-area" id="notificationListArea" style="gap: 8px; justify-content: flex-start; align-items: stretch;"></div>
     </div>
 
     <div id="settingsScreen" class="screen">
@@ -331,10 +330,15 @@
           <span id="onlineCountDisplay">🟢 --人</span>
         </div>
         <div style="display: flex; align-items: center;">
+          <button id="toggleSearchBtn" class="header-icon-btn" title="検索">🔍</button>
           <button id="shareRoomBtn" class="header-icon-btn" title="共有URLを表示">🔗</button>
           <button id="startCallBtn" class="header-icon-btn" title="通話">📹</button>
           <button id="startGlobalCallBtn" class="header-icon-btn" title="全体通話" style="display:none; font-size: 22px;">📞</button>
         </div>
+      </div>
+
+      <div id="chatSearchArea" style="display:none; padding: 8px 10px; background: #fff; border-bottom: 1px solid #ddd; flex-shrink: 0;">
+        <input type="text" id="chatSearchInput" class="text-input" placeholder="メッセージを検索..." style="width:100%; margin:0; padding: 8px; font-size:14px;">
       </div>
       
       <div id="onlineMembersList"></div>
@@ -561,7 +565,6 @@
           if (change.type === "added") {
             const req = change.doc.data(); const reqId = change.doc.id;
             if(req.status !== "pending") return;
-            // 画面上部のアラート
             document.getElementById('requestSenderName').textContent = req.senderName;
             document.getElementById('friendRequestAlert').style.display = 'flex';
             document.getElementById('acceptReqBtn').onclick = async () => {
@@ -579,7 +582,6 @@
           }
         });
 
-        // 申請リスト画面の描画
         snapshot.forEach(docSnap => {
           const req = docSnap.data();
           const reqId = docSnap.id;
@@ -636,7 +638,6 @@
           }
         });
 
-        // 申請リスト画面の描画（送信済みの保留中）
         snapshot.forEach(docSnap => {
           const req = docSnap.data();
           if(req.status === "pending") {
@@ -831,6 +832,7 @@
       subscribeToChatRoom(currentRoomId); setOnlineStatus(currentRoomId); subscribeOnlineCount(currentRoomId);
     }
 
+    /* ＝＝＝ メッセージの監視（削除対応版） ＝＝＝ */
     function subscribeToChatRoom(roomId) {
       if (chatUnsubscribe) chatUnsubscribe();
       document.getElementById('msgArea').innerHTML = '';
@@ -839,15 +841,22 @@
         snapshot.docChanges().forEach((change) => {
           if (change.type === "added") {
             const data = change.doc.data();
-            renderMessage(data.text, data.senderId === myId, data.senderName, data.senderIcon, data.createdAt, data.imageUrl, data.senderId);
+            renderMessage(data.text, data.senderId === myId, data.senderName, data.senderIcon, data.createdAt, data.imageUrl, data.senderId, change.doc.id);
+          }
+          if (change.type === "removed") {
+            const el = document.getElementById(`msg-${change.doc.id}`);
+            if (el) el.remove();
           }
         });
       }, (error) => { console.error("チャット読み込みエラー:", error); });
     }
 
-    function renderMessage(text, isMine, senderName, senderIcon, createdAt, imageUrl, senderId) {
+    /* ＝＝＝ メッセージの描画（コピー＆削除ボタン追加） ＝＝＝ */
+    function renderMessage(text, isMine, senderName, senderIcon, createdAt, imageUrl, senderId, messageId) {
       const msgArea = document.getElementById('msgArea');
       const div = document.createElement('div'); div.className = `msg-row ${isMine ? 'mine' : 'other'}`;
+      div.id = `msg-${messageId}`;
+
       const iconDiv = document.createElement('div'); iconDiv.className = 'chat-icon'; setIconDisplay(iconDiv, senderIcon);
       
       if (!isMine && senderId) {
@@ -860,8 +869,9 @@
       if (!isMine) { const nameDiv = document.createElement('div'); nameDiv.className = 'sender-name'; nameDiv.textContent = senderName; wrapper.appendChild(nameDiv); }
       const msgDiv = document.createElement('div'); msgDiv.className = `msg ${isMine ? 'my-msg' : 'bot-msg'}`; 
       
+      let textSpan = null;
       if (text) {
-        const textSpan = document.createElement('span');
+        textSpan = document.createElement('span');
         const escapedText = text.replace(/[&<>"']/g, function(m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]; });
         textSpan.innerHTML = escapedText.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
         msgDiv.appendChild(textSpan);
@@ -871,8 +881,73 @@
         const dateObj = new Date(createdAt);
         const timeDiv = document.createElement('div'); timeDiv.className = 'msg-time'; timeDiv.textContent = `${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`; msgDiv.appendChild(timeDiv);
       }
-      wrapper.appendChild(msgDiv); div.appendChild(iconDiv); div.appendChild(wrapper); msgArea.appendChild(div); 
+      
+      wrapper.appendChild(msgDiv); 
+
+      /* コピー＆削除アクションエリア */
+      const actionDiv = document.createElement('div');
+      actionDiv.style.display = 'flex';
+      actionDiv.style.gap = '12px';
+      actionDiv.style.marginTop = '4px';
+      actionDiv.style.fontSize = '12px';
+      actionDiv.style.color = '#888';
+      actionDiv.style.justifyContent = isMine ? 'flex-end' : 'flex-start';
+      actionDiv.style.padding = '0 5px';
+
+      if (text) {
+          const copyBtn = document.createElement('span');
+          copyBtn.textContent = '📋 コピー';
+          copyBtn.style.cursor = 'pointer';
+          copyBtn.onclick = () => { navigator.clipboard.writeText(text).then(() => alert('コピーしました')).catch(()=>alert('コピーに失敗しました')); };
+          actionDiv.appendChild(copyBtn);
+      }
+      if (isMine) {
+          const delBtn = document.createElement('span');
+          delBtn.textContent = '🗑️ 削除';
+          delBtn.style.cursor = 'pointer';
+          delBtn.style.color = '#e74c3c';
+          delBtn.onclick = async () => {
+              if(confirm('メッセージを削除しますか？')) {
+                  await deleteDoc(doc(db, "rooms", currentRoomId, "messages", messageId));
+              }
+          };
+          actionDiv.appendChild(delBtn);
+      }
+
+      if (actionDiv.children.length > 0) wrapper.appendChild(actionDiv);
+
+      div.appendChild(iconDiv); div.appendChild(wrapper); msgArea.appendChild(div); 
       msgArea.scrollTop = msgArea.scrollHeight;
+    }
+
+    /* ＝＝＝ メッセージ検索の処理 ＝＝＝ */
+    document.getElementById('toggleSearchBtn').addEventListener('click', () => {
+      const searchArea = document.getElementById('chatSearchArea');
+      if(searchArea.style.display === 'none') {
+          searchArea.style.display = 'block';
+          document.getElementById('chatSearchInput').focus();
+      } else {
+          searchArea.style.display = 'none';
+          document.getElementById('chatSearchInput').value = '';
+          filterMessages('');
+      }
+    });
+
+    document.getElementById('chatSearchInput').addEventListener('input', (e) => {
+      filterMessages(e.target.value.toLowerCase());
+    });
+
+    function filterMessages(keyword) {
+      const msgs = document.querySelectorAll('.msg-row');
+      msgs.forEach(row => {
+        const textSpan = row.querySelector('.msg span'); 
+        if(textSpan) {
+           const text = textSpan.textContent.toLowerCase();
+           row.style.display = text.includes(keyword) ? 'flex' : 'none';
+        } else {
+           row.style.display = keyword ? 'none' : 'flex';
+        }
+      });
     }
 
     document.getElementById('imageSendBtn').addEventListener('click', () => { document.getElementById('chatImageInput').click(); });
