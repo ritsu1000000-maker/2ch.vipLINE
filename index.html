@@ -26,7 +26,8 @@
 
     /* プロフィールとアイコン */
     .my-profile-display { background-color: #e5ddd5; padding: 15px 40px; border-radius: 20px; text-align: center; border: 2px solid #075e54; display: inline-block; margin-bottom: 10px; position: relative; }
-    .profile-name { font-size: 22px; font-weight: bold; color: #333; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .profile-name { font-size: 22px; font-weight: bold; color: #333; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .profile-status { font-size: 14px; color: #555; margin-bottom: 15px; word-break: break-word; }
     .profile-id { font-size: 14px; color: #666; }
     .edit-name-btn { background-color: #34495e; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: bold; margin: 0 5px; }
     .chat-icon { width: 45px; height: 45px; border-radius: 50%; background-color: #bdc3c7; background-size: cover; background-position: center; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 2px solid #fff; }
@@ -45,7 +46,7 @@
     .msg { padding: 12px 15px; border-radius: 15px; font-size: 16px; line-height: 1.4; word-wrap: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.15); display: flex; flex-direction: column; }
     .msg.my-msg { background-color: #dcf8c6; border-top-right-radius: 0; }
     .msg.bot-msg { background-color: #fff; border-top-left-radius: 0; }
-    .msg a { color: #0066cc; text-decoration: underline; } /* リンク用スタイル */
+    .msg a { color: #0066cc; text-decoration: underline; }
     
     .msg img.chat-image { max-width: 100%; max-height: 250px; border-radius: 8px; object-fit: contain; }
     .msg-time { font-size: 11px; color: #888; text-align: right; margin-top: 5px; }
@@ -139,10 +140,16 @@
           <div class="input-label">プロフィール画像（タップで選択）</div>
           <div id="iconPreview" class="chat-icon profile-icon-large" title="画像をタップして変更">👤</div>
           <input type="file" id="myIconUpload" accept="image/*" style="display: none;">
+          
           <div class="input-label" style="margin-top: 15px;">表示名</div>
           <input type="text" id="myNameInput" class="text-input" placeholder="例: 太郎">
+          
+          <div class="input-label">ひとこと（ステータス）</div>
+          <input type="text" id="myStatusInput" class="text-input" placeholder="例: よろしくお願いします！">
+          
           <div class="input-label">ユーザーID（重複不可）</div>
           <input type="text" id="myIdInput" class="text-input" placeholder="例: taro_123">
+          
           <button id="loginBtn" class="action-btn" style="margin-top: 10px;">登録してはじめる</button>
         </div>
       </div>
@@ -155,18 +162,17 @@
       </div>
       <div class="content-area">
         <div class="my-profile-display">
-          <div id="homeMyIcon" class="chat-icon profile-icon-large" title="画像をタップして変更">👤</div>
+          <div id="homeMyIcon" class="chat-icon profile-icon-large">👤</div>
           <div class="profile-name"><span id="displayMyName"></span></div>
+          <div class="profile-status" id="displayMyStatus"></div>
           
           <div style="margin-bottom: 10px;">
-            <button id="editNameBtn" class="edit-name-btn">✎ 名前変更</button>
-            <button id="editIconBtn" class="edit-name-btn" style="background-color: #8e44ad;">🖼 画像変更</button>
+            <button id="openSettingsBtn" class="edit-name-btn" style="background-color: #7f8c8d; padding: 8px 20px; font-size: 14px;">⚙️ プロフィール・設定</button>
           </div>
           <div style="margin-bottom: 10px;">
             <button id="showQrBtn" class="edit-name-btn" style="background-color: #27ae60; padding: 8px 20px; font-size: 14px;">📱 友達追加QRを表示</button>
           </div>
           <div class="profile-id">ID: <span id="displayMyId"></span></div>
-          <input type="file" id="changeIconUpload" accept="image/*" style="display: none;">
         </div>
         
         <div class="section-box" style="border-left: 5px solid #e67e22;">
@@ -190,6 +196,35 @@
       </div>
     </div>
 
+    <div id="settingsScreen" class="screen">
+      <div class="header" style="background-color: #7f8c8d;">
+        <button id="backFromSettingsBtn" class="back-btn">◀ 戻る</button>
+        <span>⚙️ 設定</span><div style="width: 70px;"></div>
+      </div>
+      <div class="content-area">
+        <div class="section-box">
+          <h3 style="margin-top: 0;">プロフィール編集</h3>
+          <div class="input-label" style="text-align: center;">画像（タップで変更）</div>
+          <div id="settingsIconPreview" class="chat-icon profile-icon-large" title="画像をタップして変更">👤</div>
+          <input type="file" id="settingsIconUpload" accept="image/*" style="display: none;">
+          
+          <div class="input-label">表示名</div>
+          <input type="text" id="settingsNameInput" class="text-input" placeholder="名前">
+          
+          <div class="input-label">ひとこと（ステータス）</div>
+          <input type="text" id="settingsStatusInput" class="text-input" placeholder="よろしくお願いします！など">
+          
+          <button id="saveSettingsBtn" class="action-btn">保存する</button>
+        </div>
+        
+        <div class="section-box">
+          <h3 style="margin-top: 0;">アプリ設定</h3>
+          <button id="logoutBtn" class="action-btn" style="background-color: #e74c3c;">ログアウト</button>
+          <p style="font-size: 12px; color: #888; margin-top: 10px;">※この端末のデータがリセットされます</p>
+        </div>
+      </div>
+    </div>
+
     <div id="userProfileScreen" class="screen">
       <div class="header">
         <button id="backFromUserProfileBtn" class="back-btn">◀ 戻る</button>
@@ -199,6 +234,7 @@
          <div class="my-profile-display" style="width: 80%; padding: 30px;">
             <div id="targetUserIcon" class="chat-icon profile-icon-large" style="margin: 0 auto 15px auto;">👤</div>
             <div class="profile-name"><span id="targetUserName"></span></div>
+            <div class="profile-status" id="targetUserStatus"></div>
             <div class="profile-id" style="margin-bottom: 20px;">ID: <span id="targetUserId"></span></div>
             <button id="sendRequestBtn" class="action-btn">友達リクエストを送信</button>
          </div>
@@ -284,7 +320,8 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    let myName = '', myId = '', myIconData = '👤';
+    let myName = '', myId = '', myIconData = '👤', myStatus = '';
+    let tempIconData = ''; // 設定画面用の一時保存
     let currentFriendId = '', chatMode = 'private', currentRoomId = '';
     let chatUnsubscribe = null, incomingCallUnsubscribe = null, onlineUnsubscribe = null;
     let localStream = null, remoteStream = null, peerConnection = null, isScreenSharing = false, screenStream = null;
@@ -295,7 +332,7 @@
       login: document.getElementById('loginScreen'), home: document.getElementById('homeScreen'), 
       userProfile: document.getElementById('userProfileScreen'), friends: document.getElementById('friendsScreen'), 
       chat: document.getElementById('chatScreen'), call: document.getElementById('inCallScreen'), 
-      globalCall: document.getElementById('globalCallScreen') 
+      globalCall: document.getElementById('globalCallScreen'), settings: document.getElementById('settingsScreen') 
     };
     function showScreen(screenName) { Object.values(screens).forEach(s => s.classList.remove('active')); screens[screenName].classList.add('active'); }
 
@@ -327,7 +364,7 @@
     
     async function saveProfileToDB() {
       if(!myId) return;
-      try { await setDoc(doc(db, "users", myId), { name: myName, icon: myIconData, id: myId }, { merge: true }); } 
+      try { await setDoc(doc(db, "users", myId), { name: myName, icon: myIconData, id: myId, status: myStatus }, { merge: true }); } 
       catch (e) { console.error("プロフィール保存エラー:", e); }
     }
 
@@ -336,10 +373,7 @@
       if (!myId) return;
       try {
         await setDoc(doc(db, "online_users", myId), { 
-          roomId: roomId, 
-          name: myName, // 名前を保存
-          icon: myIconData, // アイコンを保存
-          timestamp: Date.now() 
+          roomId: roomId, name: myName, icon: myIconData, timestamp: Date.now() 
         });
       } catch (e) { console.error("オンライン状態登録エラー:", e); }
     }
@@ -361,7 +395,6 @@
         display.style.display = 'inline-block';
         display.textContent = `🟢 ${count}人`;
         
-        // メンバーリストの生成
         listDiv.innerHTML = '';
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
@@ -393,17 +426,12 @@
       });
     }
 
-    // メンバー一覧の表示切替イベント
     document.getElementById('onlineCountDisplay').addEventListener('click', () => {
       const listDiv = document.getElementById('onlineMembersList');
-      if (listDiv.style.display === 'flex') {
-        listDiv.style.display = 'none';
-      } else {
-        listDiv.style.display = 'flex';
-      }
+      if (listDiv.style.display === 'flex') listDiv.style.display = 'none';
+      else listDiv.style.display = 'flex';
     });
 
-    // 画面を閉じた時やリロード時にオンライン状態を削除
     window.addEventListener('beforeunload', () => { removeOnlineStatus(); });
 
     /* ＝＝＝ 友達・チャット機能全般 ＝＝＝ */
@@ -424,6 +452,7 @@
         const data = userDoc.data();
         document.getElementById('targetUserName').textContent = data.name;
         document.getElementById('targetUserId').textContent = data.id;
+        document.getElementById('targetUserStatus').textContent = data.status || '';
         setIconDisplay(document.getElementById('targetUserIcon'), data.icon);
         
         document.getElementById('sendRequestBtn').onclick = async () => {
@@ -449,20 +478,15 @@
       chatMode = (roomId === 'global_room') ? 'global' : 'group';
       currentRoomId = roomId;
       showScreen('chat');
-      document.getElementById('onlineMembersList').style.display = 'none'; // 入室時は一旦閉じる
+      document.getElementById('onlineMembersList').style.display = 'none';
       
-      if (roomId === 'global_room') {
-        document.getElementById('chatTitle').textContent = '🌍 全体チャット';
-      } else {
-        document.getElementById('chatTitle').textContent = `🚪 ルーム: ${roomId}`;
-      }
+      if (roomId === 'global_room') document.getElementById('chatTitle').textContent = '🌍 全体チャット';
+      else document.getElementById('chatTitle').textContent = `🚪 ルーム: ${roomId}`;
       
       document.getElementById('startCallBtn').style.display = 'none';
       document.getElementById('startGlobalCallBtn').style.display = 'block';
       
       subscribeToChatRoom(currentRoomId);
-      
-      // 入室した際にオンライン情報を登録し、監視を開始
       await setOnlineStatus(currentRoomId);
       subscribeOnlineCount(currentRoomId);
       
@@ -521,11 +545,16 @@
       const friendIdFromUrl = params.get('friend');
       const roomFromUrl = params.get('room'); 
 
-      const sName = localStorage.getItem('chatApp_MyName'), sId = localStorage.getItem('chatApp_MyId'), sIcon = localStorage.getItem('chatApp_MyIcon');
+      const sName = localStorage.getItem('chatApp_MyName'), 
+            sId = localStorage.getItem('chatApp_MyId'), 
+            sIcon = localStorage.getItem('chatApp_MyIcon'),
+            sStatus = localStorage.getItem('chatApp_MyStatus');
       
       if (sName && sId) {
-        myName = sName; myId = sId; myIconData = sIcon || '👤';
-        document.getElementById('displayMyName').textContent = myName; document.getElementById('displayMyId').textContent = myId;
+        myName = sName; myId = sId; myIconData = sIcon || '👤'; myStatus = sStatus || '';
+        document.getElementById('displayMyName').textContent = myName; 
+        document.getElementById('displayMyId').textContent = myId;
+        document.getElementById('displayMyStatus').textContent = myStatus;
         setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
         saveProfileToDB(); 
         showScreen('home');
@@ -542,29 +571,56 @@
       }
     };
 
-    const triggerIconUpload = () => document.getElementById('changeIconUpload').click();
-    document.getElementById('homeMyIcon').addEventListener('click', triggerIconUpload);
-    document.getElementById('editIconBtn').addEventListener('click', triggerIconUpload);
+    /* ＝＝＝ 設定・プロフィール画面のロジック ＝＝＝ */
+    document.getElementById('openSettingsBtn').addEventListener('click', () => {
+      // 現在の設定をフォームにセット
+      document.getElementById('settingsNameInput').value = myName;
+      document.getElementById('settingsStatusInput').value = myStatus;
+      tempIconData = myIconData;
+      setIconDisplay(document.getElementById('settingsIconPreview'), tempIconData);
+      showScreen('settings');
+    });
 
-    document.getElementById('changeIconUpload').addEventListener('change', (e) => {
+    document.getElementById('backFromSettingsBtn').addEventListener('click', () => showScreen('home'));
+
+    document.getElementById('settingsIconPreview').addEventListener('click', () => document.getElementById('settingsIconUpload').click());
+    document.getElementById('settingsIconUpload').addEventListener('change', (e) => {
       processImage(e.target.files[0], (dataUrl) => {
-        myIconData = dataUrl;
-        setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
-        localStorage.setItem('chatApp_MyIcon', myIconData);
-        saveProfileToDB();
+        tempIconData = dataUrl;
+        setIconDisplay(document.getElementById('settingsIconPreview'), tempIconData);
       });
     });
 
-    document.getElementById('editNameBtn').addEventListener('click', () => {
-      const newName = prompt('新しい表示名を入力してください:', myName);
-      if (newName && newName.trim() !== '') {
-        myName = newName.trim();
-        document.getElementById('displayMyName').textContent = myName;
-        localStorage.setItem('chatApp_MyName', myName);
-        saveProfileToDB();
+    document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
+      const n = document.getElementById('settingsNameInput').value.trim();
+      const s = document.getElementById('settingsStatusInput').value.trim();
+      if (!n) return alert('表示名を入力してください');
+      
+      myName = n;
+      myStatus = s;
+      myIconData = tempIconData;
+
+      localStorage.setItem('chatApp_MyName', myName);
+      localStorage.setItem('chatApp_MyStatus', myStatus);
+      localStorage.setItem('chatApp_MyIcon', myIconData);
+
+      document.getElementById('displayMyName').textContent = myName;
+      document.getElementById('displayMyStatus').textContent = myStatus;
+      setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
+
+      await saveProfileToDB();
+      alert('設定を保存しました！');
+      showScreen('home');
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      if (confirm('ログアウトしますか？この端末からデータが消去されます。')) {
+        localStorage.clear();
+        location.reload();
       }
     });
 
+    /* ＝＝＝ その他の既存ロジック ＝＝＝ */
     document.getElementById('showQrBtn').addEventListener('click', () => {
       const shareUrl = window.location.origin + window.location.pathname + '?friend=' + encodeURIComponent(myId);
       const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(shareUrl)}`;
@@ -602,19 +658,22 @@
     });
 
     document.getElementById('loginBtn').addEventListener('click', async () => {
-      const n = document.getElementById('myNameInput').value.trim(), id = document.getElementById('myIdInput').value.trim();
+      const n = document.getElementById('myNameInput').value.trim();
+      const id = document.getElementById('myIdInput').value.trim();
+      const s = document.getElementById('myStatusInput').value.trim();
       if (!n || !id) return alert('入力してください');
-      myName = n; myId = id;
-      localStorage.setItem('chatApp_MyName', myName); localStorage.setItem('chatApp_MyId', myId); localStorage.setItem('chatApp_MyIcon', myIconData);
+      myName = n; myId = id; myStatus = s;
+      localStorage.setItem('chatApp_MyName', myName); localStorage.setItem('chatApp_MyId', myId); 
+      localStorage.setItem('chatApp_MyIcon', myIconData); localStorage.setItem('chatApp_MyStatus', myStatus);
+      
       document.getElementById('displayMyName').textContent = myName; document.getElementById('displayMyId').textContent = myId;
+      document.getElementById('displayMyStatus').textContent = myStatus;
       setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
       
       await saveProfileToDB();
       
       showScreen('home'); 
-      listenForIncomingCalls();
-      listenForFriendRequests();
-      listenForAcceptedRequests();
+      listenForIncomingCalls(); listenForFriendRequests(); listenForAcceptedRequests();
 
       if (window.pendingFriendId) { processUrlFriend(window.pendingFriendId); window.pendingFriendId = null; }
       if (window.pendingRoomId) { processUrlRoom(window.pendingRoomId); window.pendingRoomId = null; }
@@ -628,9 +687,7 @@
 
     document.getElementById('backFromUserProfileBtn').addEventListener('click', () => showScreen('home'));
 
-    document.getElementById('globalChatBtn').addEventListener('click', () => {
-      processUrlRoom('global_room');
-    });
+    document.getElementById('globalChatBtn').addEventListener('click', () => { processUrlRoom('global_room'); });
 
     document.getElementById('randomRoomBtn').addEventListener('click', () => {
       const randomRoomId = Math.floor(100000 + Math.random() * 900000).toString(); 
@@ -638,20 +695,13 @@
     });
 
     function startPrivateChat(friendId) {
-      currentFriendId = friendId; 
-      chatMode = 'private'; 
+      currentFriendId = friendId; chatMode = 'private'; 
       currentRoomId = [myId, friendId].sort().join('_');
-      showScreen('chat'); 
-      document.getElementById('onlineMembersList').style.display = 'none'; // 入室時は一旦閉じる
-      
+      showScreen('chat'); document.getElementById('onlineMembersList').style.display = 'none';
       document.getElementById('chatTitle').textContent = friendId;
-      document.getElementById('startCallBtn').style.display = 'block'; 
-      document.getElementById('startGlobalCallBtn').style.display = 'none';
+      document.getElementById('startCallBtn').style.display = 'block'; document.getElementById('startGlobalCallBtn').style.display = 'none';
       subscribeToChatRoom(currentRoomId);
-      
-      // 個人チャットでもオンライン情報を登録し、監視を開始
-      setOnlineStatus(currentRoomId);
-      subscribeOnlineCount(currentRoomId);
+      setOnlineStatus(currentRoomId); subscribeOnlineCount(currentRoomId);
     }
 
     function subscribeToChatRoom(roomId) {
@@ -666,12 +716,9 @@
             renderMessage(data.text, data.senderId === myId, data.senderName, data.senderIcon, data.createdAt, data.imageUrl);
           }
         });
-      }, (error) => {
-        console.error("チャット読み込みエラー:", error);
-      });
+      }, (error) => { console.error("チャット読み込みエラー:", error); });
     }
 
-    // --- メッセージ描画 (自動リンク化対応) ---
     function renderMessage(text, isMine, senderName, senderIcon, createdAt, imageUrl) {
       const msgArea = document.getElementById('msgArea');
       const div = document.createElement('div'); div.className = `msg-row ${isMine ? 'mine' : 'other'}`;
@@ -685,121 +732,67 @@
       
       const msgDiv = document.createElement('div'); msgDiv.className = `msg ${isMine ? 'my-msg' : 'bot-msg'}`; 
       
-      // テキストが存在する場合 (自動リンク化処理を追加)
       if (text) {
         const textSpan = document.createElement('span');
-        
-        // 1. HTMLエスケープ (XSS対策)
-        const escapedText = text.replace(/[&<>"']/g, function(match) {
-            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[match];
-        });
-        
-        // 2. URLを検知して <a> タグに変換
+        const escapedText = text.replace(/[&<>"']/g, function(match) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[match]; });
         const urlRegex = /(https?:\/\/[^\s]+)/g;
         const linkedText = escapedText.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
-        
-        textSpan.innerHTML = linkedText;
-        msgDiv.appendChild(textSpan);
+        textSpan.innerHTML = linkedText; msgDiv.appendChild(textSpan);
       }
       
-      // 画像やGIFが存在する場合
       if (imageUrl) {
-        const img = document.createElement('img');
-        img.src = imageUrl;
-        img.className = 'chat-image';
-        msgDiv.appendChild(img);
+        const img = document.createElement('img'); img.src = imageUrl; img.className = 'chat-image'; msgDiv.appendChild(img);
       }
 
-      // 時刻（タイムスタンプ）の生成
       if (createdAt) {
         const dateObj = new Date(createdAt);
         const hours = dateObj.getHours().toString().padStart(2, '0');
         const minutes = dateObj.getMinutes().toString().padStart(2, '0');
-        
-        const timeDiv = document.createElement('div');
-        timeDiv.className = 'msg-time';
-        timeDiv.textContent = `${hours}:${minutes}`;
-        msgDiv.appendChild(timeDiv);
+        const timeDiv = document.createElement('div'); timeDiv.className = 'msg-time'; timeDiv.textContent = `${hours}:${minutes}`; msgDiv.appendChild(timeDiv);
       }
 
       wrapper.appendChild(msgDiv); div.appendChild(iconDiv); div.appendChild(wrapper);
       msgArea.appendChild(div); msgArea.scrollTop = msgArea.scrollHeight;
     }
 
-    document.getElementById('imageSendBtn').addEventListener('click', () => {
-      document.getElementById('chatImageInput').click();
-    });
+    document.getElementById('imageSendBtn').addEventListener('click', () => { document.getElementById('chatImageInput').click(); });
 
     document.getElementById('chatImageInput').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      
-      if (file.size > 800 * 1024) {
-        alert("ファイルサイズが大きすぎます（800KB以下の画像/GIFを選択してください）");
-        e.target.value = '';
-        return;
-      }
+      if (file.size > 800 * 1024) { alert("ファイルサイズが大きすぎます（800KB以下の画像/GIFを選択してください）"); e.target.value = ''; return; }
 
       const reader = new FileReader();
       reader.onload = async function(event) {
         const imageUrl = event.target.result;
         try {
           await addDoc(collection(db, "rooms", currentRoomId, "messages"), { 
-            text: "", 
-            imageUrl: imageUrl,
-            senderId: myId, 
-            senderName: myName, 
-            senderIcon: myIconData, 
-            createdAt: Date.now() 
+            text: "", imageUrl: imageUrl, senderId: myId, senderName: myName, senderIcon: myIconData, createdAt: Date.now() 
           });
-        } catch (error) {
-          console.error("画像送信エラー:", error);
-        }
+        } catch (error) { console.error("画像送信エラー:", error); }
       };
-      reader.readAsDataURL(file); 
-      e.target.value = ''; 
+      reader.readAsDataURL(file); e.target.value = ''; 
     });
 
     document.getElementById('sendBtn').addEventListener('click', async () => {
       const text = document.getElementById('chatTextInput').value.trim();
       if (!text) return; document.getElementById('chatTextInput').value = '';
       try {
-        await addDoc(collection(db, "rooms", currentRoomId, "messages"), { 
-          text: text, 
-          senderId: myId, 
-          senderName: myName, 
-          senderIcon: myIconData, 
-          createdAt: Date.now() 
-        });
-      } catch (e) {
-        console.error("送信エラー:", e);
-      }
+        await addDoc(collection(db, "rooms", currentRoomId, "messages"), { text: text, senderId: myId, senderName: myName, senderIcon: myIconData, createdAt: Date.now() });
+      } catch (e) { console.error("送信エラー:", e); }
     });
 
-    // ＝＝＝ 追加：エンターキーで送信 ＝＝＝
     document.getElementById('chatTextInput').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        // 変換中のエンターは無視
-        if (e.isComposing) return;
-        document.getElementById('sendBtn').click();
-      }
+      if (e.key === 'Enter') { if (e.isComposing) return; document.getElementById('sendBtn').click(); }
     });
-    // ＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
 
-    // --- チャットルームからの退出処理 ---
     document.getElementById('backBtn').addEventListener('click', () => { 
-      removeOnlineStatus(); // ルーム退出時にオンライン状態を消す
-      if(onlineUnsubscribe) onlineUnsubscribe();
-      showScreen('home'); 
+      removeOnlineStatus(); if(onlineUnsubscribe) onlineUnsubscribe(); showScreen('home'); 
     });
     
-    // --- 友達リスト描画 ＆ 削除ボタン ---
     document.getElementById('openFriendsBtn').addEventListener('click', async () => {
-      showScreen('friends'); 
-      const area = document.getElementById('friendsListArea'); 
-      area.innerHTML = '読み込み中...';
+      showScreen('friends'); const area = document.getElementById('friendsListArea'); area.innerHTML = '読み込み中...';
       const friends = getSafeData('chatApp_Friends', []);
-      
       area.innerHTML = '';
       if(friends.length === 0) { area.innerHTML = '友達がいません'; return; }
       
@@ -814,7 +807,6 @@
         const bgStyle = fIcon.startsWith('data:') ? `background-image:url(${fIcon});` : '';
         const txt = fIcon.startsWith('data:') ? '' : fIcon;
         
-        // 削除ボタンを含めたHTMLをセット
         d.innerHTML = `
           <div class="friend-info">
             <div class="chat-icon" style="${bgStyle}">${txt}</div>
@@ -823,21 +815,17 @@
           <button class="delete-btn">削除</button>
         `;
         
-        // 削除ボタンのクリックイベントを設定
         d.querySelector('.delete-btn').addEventListener('click', (e) => {
-          e.stopPropagation(); // 親要素のクリック(チャット開始)を止める
+          e.stopPropagation();
           if(confirm(`${fName}さんを友達から削除しますか？`)) {
             let currentFriends = getSafeData('chatApp_Friends', []);
             currentFriends = currentFriends.filter(id => id !== f);
             localStorage.setItem('chatApp_Friends', JSON.stringify(currentFriends));
-            d.remove(); // 画面上から消す
-            if(currentFriends.length === 0) area.innerHTML = '友達がいません';
+            d.remove(); if(currentFriends.length === 0) area.innerHTML = '友達がいません';
           }
         });
 
-        // 友達アイテム自体をクリックしたらチャット画面へ
-        d.onclick = () => startPrivateChat(f); 
-        area.appendChild(d);
+        d.onclick = () => startPrivateChat(f); area.appendChild(d);
       }
     });
     
@@ -852,11 +840,9 @@
     });
 
     document.getElementById('endGlobalCallBtn').addEventListener('click', () => {
-      if (jitsiApi) { jitsiApi.dispose(); jitsiApi = null; }
-      showScreen('chat');
+      if (jitsiApi) { jitsiApi.dispose(); jitsiApi = null; } showScreen('chat');
     });
 
-    // --- 1対1 WebRTC通信 ---
     async function openUserMedia() {
       try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
