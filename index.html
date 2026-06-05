@@ -236,10 +236,15 @@
           <h4 style="margin: 0 0 5px 0; text-align: left;">👤 友達を追加する</h4>
           <input type="text" id="friendIdInput" class="text-input" placeholder="相手のIDを入力" style="width:100%; margin-bottom:10px;">
           <button id="addFriendBtn" class="action-btn" style="width:100%; margin-bottom:8px;">検索</button>
+          
           <div style="display: flex; gap: 8px; width: 100%;">
             <button id="openFriendsBtn" class="action-btn link-btn" style="flex:1; margin-top:0; padding:10px 0; font-size:13px;">📋 友達リスト</button>
-            <button id="openRequestsBtn" class="action-btn link-btn" style="flex:1; margin-top:0; padding:10px 0; font-size:13px; background-color: #e67e22;">💌 申請リスト</button>
+            <div style="flex:1; position: relative;">
+              <button id="openRequestsBtn" class="action-btn link-btn" style="width: 100%; margin-top:0; padding:10px 0; font-size:13px; background-color: #e67e22;">💌 申請リスト</button>
+              <span id="requestNotificationBadge" class="badge" style="top: -5px; right: -5px;"></span>
+            </div>
           </div>
+
         </div>
       </div>
     </div>
@@ -308,7 +313,7 @@
     <div id="requestsScreen" class="screen">
       <div class="header" style="background-color: #e67e22;">
         <button id="backFromRequestsBtn" class="back-btn">◀ 戻る</button>
-        <span>💬　申請リスト</span><div style="width: 50px;"></div>
+        <span>💬 申請リスト</span><div style="width: 50px;"></div>
       </div>
       <div class="content-area" style="align-items: stretch; gap: 20px;">
         <div class="section-box" style="border-left: 5px solid #3498db; padding: 10px;">
@@ -614,7 +619,20 @@
             }
           }
         });
+        
         if(pendingCount === 0 && receivedArea) receivedArea.innerHTML = '<div style="font-size:12px; color:#666;">受信した申請はありません</div>';
+        
+        // ★修正点：申請リストの通知バッジの表示制御
+        const reqBadge = document.getElementById('requestNotificationBadge');
+        if (reqBadge) {
+          if (pendingCount > 0) {
+            reqBadge.style.display = 'inline-block';
+            reqBadge.textContent = pendingCount > 99 ? '99+' : pendingCount;
+          } else {
+            reqBadge.style.display = 'none';
+          }
+        }
+
       });
     }
 
