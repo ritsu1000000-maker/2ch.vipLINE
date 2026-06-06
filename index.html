@@ -63,6 +63,26 @@
     .action-btn:hover { background-color: #0b7366; }
     .global-btn { background-color: #e67e22; }
 
+    /* ソーシャルログインボタンのスタイル */
+    .social-login-grid {
+      display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; width: 90%; margin: 0 auto;
+    }
+    .social-btn {
+      flex: 1 1 calc(50% - 8px); padding: 10px 5px; border: none; border-radius: 5px; color: white; 
+      font-weight: bold; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;
+    }
+    .btn-google { background: #4285F4; }
+    .btn-line { background: #06C755; }
+    .btn-discord { background: #5865F2; }
+    .btn-apple { background: #000000; }
+    .btn-x { background: #000000; }
+    .btn-fb { background: #1877F2; }
+    .btn-github { background: #333333; }
+    .btn-ms { background: #00A4EF; }
+    .btn-yahoo { background: #ff0033; }
+    .btn-twitch { background: #9146FF; }
+    .btn-amazon { background: #FF9900; }
+
     .my-profile-display { background-color: #e5ddd5; padding: 15px 20px; border-radius: 20px; text-align: center; border: 2px solid #075e54; display: inline-block; margin-bottom: 10px; position: relative; width: 90%; }
     .profile-name { font-size: 20px; font-weight: bold; color: #333; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 10px; }
     .profile-status { font-size: 13px; color: #555; margin-bottom: 12px; word-break: break-word; background: rgba(255,255,255,0.7); padding: 8px; border-radius: 8px; }
@@ -72,17 +92,14 @@
     .chat-icon { width: 45px; height: 45px; border-radius: 50%; background-color: #bdc3c7; background-size: cover; background-position: center; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 2px solid #fff; }
     .profile-icon-large { width: 75px; height: 75px; font-size: 35px; margin: 0 auto 10px auto; cursor: pointer; transition: opacity 0.2s; }
 
-    /* 通知バッジのスタイル */
     .header-btn-wrapper { position: relative; display: inline-block; }
     .badge { background-color: #e74c3c; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; position: absolute; top: 0px; right: -5px; display: none; font-weight: bold;}
     
-    /* 通知・友達リストのアイテム */
     .friend-item { background: #f9f9f9; padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; width: 100%; box-sizing: border-box; cursor: pointer; border: 1px solid #eee;}
     .friend-info { display: flex; align-items: center; gap: 12px; }
     .friend-id { font-size: 16px; font-weight: bold; color: #333; text-align: left; line-height: 1.3; }
     .delete-btn { background-color: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px;}
     
-    /* 未読状態のスタイル */
     .unread { background-color: #e6f2ff !important; border-color: #b3d7ff; font-weight: bold; }
     .unread-dot { color: #e74c3c; font-size: 12px; }
 
@@ -175,27 +192,34 @@
         <div id="weatherLogin" class="weather-widget">☁️ --℃</div>
         <span>🔑 初期設定</span><div style="width: 50px;"></div>
       </div>
-      <div class="content-area" style="justify-content: center;">
-        <div class="section-box">
-          <h3 style="margin-top:0;">アプリへようこそ</h3>
-          <div class="input-label" style="text-align:center;">アイコン（タップして選択）</div>
-          <div id="iconPreview" class="chat-icon profile-icon-large" title="画像をタップして変更">👤</div>
+      <div class="content-area" style="justify-content: flex-start; padding-top: 10px;">
+        <div class="section-box" style="margin-bottom: 10px;">
+          <h3 style="margin: 0 0 10px 0; font-size: 16px;">手動で登録</h3>
+          <div class="input-label" style="text-align:center;">アイコン</div>
+          <div id="iconPreview" class="chat-icon profile-icon-large" title="画像をタップして変更" style="width:60px; height:60px; font-size:28px;">👤</div>
           <input type="file" id="myIconUpload" accept="image/*" style="display: none;">
           
-          <div class="input-label">表示名</div>
-          <input type="text" id="myNameInput" class="text-input" placeholder="例: 太郎">
-          
-          <div class="input-label">ひとこと</div>
-          <input type="text" id="myStatusInput" class="text-input" placeholder="例: よろしくお願いします！">
-          
-          <div class="input-label">ユーザーID（重複不可）</div>
-          <input type="text" id="myIdInput" class="text-input" placeholder="例: taro_123">
+          <input type="text" id="myNameInput" class="text-input" placeholder="表示名 (例: 太郎)" style="margin-bottom:8px;">
+          <input type="text" id="myStatusInput" class="text-input" placeholder="ひとこと" style="margin-bottom:8px;">
+          <input type="text" id="myIdInput" class="text-input" placeholder="ユーザーID (重複不可)" style="margin-bottom:8px;">
           
           <button id="loginBtn" class="action-btn" style="margin-top: 5px;">登録してはじめる</button>
+        </div>
 
-          <div style="margin: 15px 0; font-size: 13px; color: #666; text-align: center; font-weight: bold;">または</div>
-          <button id="googleLoginBtn" class="action-btn" style="background-color: #4285F4; margin-top: 5px;">Googleアカウントでログイン</button>
-          
+        <div style="font-size: 13px; color: #666; text-align: center; font-weight: bold; margin-bottom: 5px;">または連携してログイン</div>
+        
+        <div class="social-login-grid">
+          <button class="social-btn btn-google" data-provider="google">Google</button>
+          <button class="social-btn btn-line" data-provider="line">LINE</button>
+          <button class="social-btn btn-discord" data-provider="discord">Discord</button>
+          <button class="social-btn btn-x" data-provider="twitter">𝕏 (Twitter)</button>
+          <button class="social-btn btn-apple" data-provider="apple">Apple</button>
+          <button class="social-btn btn-fb" data-provider="facebook">Facebook</button>
+          <button class="social-btn btn-github" data-provider="github">GitHub</button>
+          <button class="social-btn btn-ms" data-provider="microsoft">Microsoft</button>
+          <button class="social-btn btn-yahoo" data-provider="yahoo">Yahoo</button>
+          <button class="social-btn btn-twitch" data-provider="twitch">Twitch</button>
+          <button class="social-btn btn-amazon" data-provider="amazon" style="flex: 1 1 100%;">Amazon</button>
         </div>
       </div>
     </div>
@@ -284,7 +308,16 @@
         </div>
         
         <div class="section-box">
-          <button id="settingsGoogleLoginBtn" class="action-btn" style="background-color: #4285F4; margin-bottom: 15px;">Googleアカウントと連携 / ログイン</button>
+          <h4 style="margin: 0 0 10px 0; text-align: left; font-size: 13px;">🔗 アカウント連携</h4>
+          <div class="social-login-grid" style="margin-bottom: 15px;">
+            <button class="social-btn btn-google" data-provider="google">Google</button>
+            <button class="social-btn btn-line" data-provider="line">LINE</button>
+            <button class="social-btn btn-discord" data-provider="discord">Discord</button>
+            <button class="social-btn btn-x" data-provider="twitter">𝕏</button>
+            <button class="social-btn btn-apple" data-provider="apple">Apple</button>
+            <button class="social-btn btn-github" data-provider="github">GitHub</button>
+            <button class="social-btn btn-amazon" data-provider="amazon" style="flex: 1 1 100%;">他連携</button>
+          </div>
 
           <button id="logoutBtn" class="action-btn" style="background-color: #e74c3c;">ログアウト</button>
           <p style="font-size: 11px; color: #888; margin-top: 8px;">※端末内のデータがリセットされます</p>
@@ -402,8 +435,8 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
     import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, setDoc, getDoc, updateDoc, deleteDoc, where } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
-    // Firebase Auth のインポート
-    import { getAuth, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+    // あらゆるプロバイダをインポート
+    import { getAuth, signInWithPopup, GoogleAuthProvider, GithubAuthProvider, TwitterAuthProvider, FacebookAuthProvider, OAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBCQArL0Q1wDveRywCpet5Nor3PuRYt7fM",
@@ -416,9 +449,23 @@
     
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    // Authの初期化
     const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
+
+    /* ＝＝＝ ログインプロバイダの準備 ＝＝＝ */
+    const providers = {
+      google: new GoogleAuthProvider(),
+      github: new GithubAuthProvider(),
+      twitter: new TwitterAuthProvider(),
+      facebook: new FacebookAuthProvider(),
+      apple: new OAuthProvider('apple.com'),
+      microsoft: new OAuthProvider('microsoft.com'),
+      yahoo: new OAuthProvider('yahoo.com'),
+      /* 以下は Firebase Identity Platform で OIDC(OpenID Connect) として設定が必要 */
+      line: new OAuthProvider('oidc.line'),
+      discord: new OAuthProvider('oidc.discord'),
+      twitch: new OAuthProvider('oidc.twitch'),
+      amazon: new OAuthProvider('oidc.amazon')
+    };
 
     let myName = '', myId = '', myIconData = '👤', myStatus = '';
     let tempIconData = ''; 
@@ -478,7 +525,6 @@
       catch (e) { console.error("プロフィール保存エラー:", e); }
     }
 
-    /* ＝＝＝ オンライン管理 ＝＝＝ */
     async function setOnlineStatus(roomId) {
       if (!myId) return;
       try { await setDoc(doc(db, "online_users", myId), { roomId: roomId, name: myName, icon: myIconData, timestamp: Date.now(), id: myId }); } catch (e) { }
@@ -522,7 +568,6 @@
     });
     window.addEventListener('beforeunload', () => { removeOnlineStatus(); });
 
-    /* ＝＝＝ 友達＆プロフィール開く処理 ＝＝＝ */
     async function processUrlFriend(fId) {
       if (!fId) return;
       if (fId === myId) return alert("自分のIDです");
@@ -571,7 +616,6 @@
       window.history.replaceState({}, document.title, window.location.pathname);
     }
 
-    /* ＝＝＝ 申請リスト（受信）の監視 ＝＝＝ */
     function listenForFriendRequests() {
       const q = query(collection(db, "friend_requests"), where("receiverId", "==", myId));
       onSnapshot(q, (snapshot) => {
@@ -644,11 +688,9 @@
             reqBadge.style.display = 'none';
           }
         }
-
       });
     }
 
-    /* ＝＝＝ 申請リスト（送信）の監視 ＝＝＝ */
     function listenForAcceptedRequests() {
       const q = query(collection(db, "friend_requests"), where("senderId", "==", myId));
       onSnapshot(q, (snapshot) => {
@@ -695,7 +737,6 @@
       });
     }
 
-    /* ＝＝＝ 通知（最新メッセージ）を監視・表示する機能 ＝＝＝ */
     function listenForNotifications() {
       if(notificationUnsubscribe) notificationUnsubscribe();
       const q = query(collection(db, "users", myId, "notifications"), orderBy("createdAt", "desc"));
@@ -784,6 +825,64 @@
       }
     };
 
+    /* ＝＝＝ ソーシャルログイン処理（共通） ＝＝＝ */
+    async function handleSocialLogin(providerKey) {
+      try {
+        const provider = providers[providerKey];
+        if (!provider) return alert('このプロバイダは設定されていません');
+        
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+        
+        // アカウント情報で上書き
+        myName = user.displayName || `${providerKey}ユーザー`;
+        myId = user.uid; // 一意のID
+        myIconData = user.photoURL || '👤';
+        myStatus = `${providerKey}アカウントでログイン中`;
+        
+        localStorage.setItem('chatApp_MyName', myName); 
+        localStorage.setItem('chatApp_MyId', myId); 
+        localStorage.setItem('chatApp_MyIcon', myIconData); 
+        localStorage.setItem('chatApp_MyStatus', myStatus);
+        
+        document.getElementById('displayMyName').textContent = myName; 
+        document.getElementById('displayMyId').textContent = myId; 
+        document.getElementById('displayMyStatus').textContent = myStatus;
+        setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
+
+        // 設定画面用も更新
+        document.getElementById('settingsNameInput').value = myName; 
+        document.getElementById('settingsStatusInput').value = myStatus;
+        tempIconData = myIconData; 
+        setIconDisplay(document.getElementById('settingsIconPreview'), tempIconData);
+        
+        await saveProfileToDB(); 
+        showScreen('home'); 
+        
+        if (!incomingCallUnsubscribe) listenForIncomingCalls(); 
+        if (!notificationUnsubscribe) listenForNotifications();
+        listenForFriendRequests(); listenForAcceptedRequests();
+
+        if (window.pendingFriendId) { processUrlFriend(window.pendingFriendId); window.pendingFriendId = null; }
+        if (window.pendingRoomId) { processUrlRoom(window.pendingRoomId); window.pendingRoomId = null; }
+        
+        if (screens.settings.classList.contains('active')) alert('連携しました！');
+
+      } catch (error) {
+        console.error(`${providerKey} ログインエラー:`, error);
+        alert('ログインに失敗しました。プロバイダがFirebaseコンソールで有効化されているか確認してください。\nエラー: ' + error.message);
+      }
+    }
+
+    // 全ソーシャルボタンにイベント付与
+    document.querySelectorAll('.social-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const providerName = e.target.getAttribute('data-provider');
+        handleSocialLogin(providerName);
+      });
+    });
+
+
     /* ＝＝＝ 設定・その他 ＝＝＝ */
     document.getElementById('openSettingsBtn').addEventListener('click', () => {
       document.getElementById('settingsNameInput').value = myName; document.getElementById('settingsStatusInput').value = myStatus;
@@ -804,14 +903,10 @@
       await saveProfileToDB(); alert('設定を保存しました！'); showScreen('home');
     });
 
-    // ログアウト処理
     document.getElementById('logoutBtn').addEventListener('click', async () => { 
       if (confirm('ログアウトしますか？')) { 
-        try {
-          await signOut(auth);
-        } catch(e) {}
-        localStorage.clear(); 
-        location.reload(); 
+        try { await signOut(auth); } catch(e) {}
+        localStorage.clear(); location.reload(); 
       } 
     });
 
@@ -858,86 +953,6 @@
       if (window.pendingRoomId) { processUrlRoom(window.pendingRoomId); window.pendingRoomId = null; }
     });
 
-    // 初期設定画面からのGoogleログイン
-    document.getElementById('googleLoginBtn').addEventListener('click', async () => {
-      try {
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-        
-        myName = user.displayName || 'Googleユーザー';
-        myId = user.uid;
-        myIconData = user.photoURL || '👤';
-        myStatus = 'Googleアカウントでログイン中';
-        
-        localStorage.setItem('chatApp_MyName', myName); 
-        localStorage.setItem('chatApp_MyId', myId); 
-        localStorage.setItem('chatApp_MyIcon', myIconData); 
-        localStorage.setItem('chatApp_MyStatus', myStatus);
-        
-        document.getElementById('displayMyName').textContent = myName; 
-        document.getElementById('displayMyId').textContent = myId; 
-        document.getElementById('displayMyStatus').textContent = myStatus;
-        setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
-        
-        await saveProfileToDB(); 
-        showScreen('home'); 
-        listenForIncomingCalls(); 
-        listenForFriendRequests(); 
-        listenForAcceptedRequests(); 
-        listenForNotifications();
-
-        if (window.pendingFriendId) { processUrlFriend(window.pendingFriendId); window.pendingFriendId = null; }
-        if (window.pendingRoomId) { processUrlRoom(window.pendingRoomId); window.pendingRoomId = null; }
-      } catch (error) {
-        console.error("Googleログインエラー:", error);
-        alert('ログインに失敗しました。');
-      }
-    });
-
-    // 追記箇所: 設定画面からのGoogleログイン（連携）
-    document.getElementById('settingsGoogleLoginBtn').addEventListener('click', async () => {
-      try {
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-        
-        // Googleのアカウント情報で上書き
-        myName = user.displayName || 'Googleユーザー';
-        myId = user.uid; // 重複しないGoogleのユーザーIDを使用
-        myIconData = user.photoURL || '👤';
-        myStatus = 'Googleアカウントでログイン中';
-        
-        // アプリケーション内の状態を更新
-        localStorage.setItem('chatApp_MyName', myName); 
-        localStorage.setItem('chatApp_MyId', myId); 
-        localStorage.setItem('chatApp_MyIcon', myIconData); 
-        localStorage.setItem('chatApp_MyStatus', myStatus);
-        
-        document.getElementById('displayMyName').textContent = myName; 
-        document.getElementById('displayMyId').textContent = myId; 
-        document.getElementById('displayMyStatus').textContent = myStatus;
-        setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
-        
-        // 設定画面のプレビュー等も更新
-        document.getElementById('settingsNameInput').value = myName; 
-        document.getElementById('settingsStatusInput').value = myStatus;
-        tempIconData = myIconData; 
-        setIconDisplay(document.getElementById('settingsIconPreview'), tempIconData);
-        
-        await saveProfileToDB(); 
-        
-        // すでにリスナーが動いていればそのまま、動いていなければ起動
-        if (!incomingCallUnsubscribe) listenForIncomingCalls(); 
-        if (!chatUnsubscribe && currentRoomId) subscribeToChatRoom(currentRoomId);
-        // （その他のリスナーも適宜）
-        
-        alert('Googleアカウントでログイン（連携）しました！');
-        showScreen('home'); 
-      } catch (error) {
-        console.error("Googleログインエラー:", error);
-        alert('ログインに失敗しました。');
-      }
-    });
-
     document.getElementById('addFriendBtn').addEventListener('click', () => { const id = document.getElementById('friendIdInput').value.trim(); if(id) processUrlFriend(id); });
     document.getElementById('backFromUserProfileBtn').addEventListener('click', () => showScreen('home'));
     document.getElementById('globalChatBtn').addEventListener('click', () => { processUrlRoom('global_room'); });
@@ -951,7 +966,6 @@
       subscribeToChatRoom(currentRoomId); setOnlineStatus(currentRoomId); subscribeOnlineCount(currentRoomId);
     }
 
-    /* ＝＝＝ メッセージの監視（削除対応版） ＝＝＝ */
     function subscribeToChatRoom(roomId) {
       if (chatUnsubscribe) chatUnsubscribe();
       document.getElementById('msgArea').innerHTML = '';
@@ -970,7 +984,6 @@
       }, (error) => { console.error("チャット読み込みエラー:", error); });
     }
 
-    /* ＝＝＝ メッセージの描画（コピー＆削除ボタン追加） ＝＝＝ */
     function renderMessage(text, isMine, senderName, senderIcon, createdAt, imageUrl, senderId, messageId) {
       const msgArea = document.getElementById('msgArea');
       const div = document.createElement('div'); div.className = `msg-row ${isMine ? 'mine' : 'other'}`;
@@ -1003,7 +1016,6 @@
       
       wrapper.appendChild(msgDiv); 
 
-      /* コピー＆削除アクションエリア */
       const actionDiv = document.createElement('div');
       actionDiv.style.display = 'flex';
       actionDiv.style.gap = '12px';
@@ -1039,7 +1051,6 @@
       msgArea.scrollTop = msgArea.scrollHeight;
     }
 
-    /* ＝＝＝ メッセージ検索の処理 ＝＝＝ */
     document.getElementById('toggleSearchBtn').addEventListener('click', () => {
       const searchArea = document.getElementById('chatSearchArea');
       if(searchArea.style.display === 'none') {
@@ -1078,14 +1089,11 @@
         const imageUrl = event.target.result;
         try {
           await addDoc(collection(db, "rooms", currentRoomId, "messages"), { text: "", imageUrl: imageUrl, senderId: myId, senderName: myName, senderIcon: myIconData, createdAt: Date.now() });
-          
           if(chatMode === 'private') {
             const friendId = currentRoomId.replace(myId, '').replace('_', '');
-            await addDoc(collection(db, "users", friendId, "notifications"), {
-              type: 'message', senderId: myId, senderName: myName, text: '📷 画像が送信されました', roomId: currentRoomId, createdAt: Date.now(), read: false
-            });
+            await addDoc(collection(db, "users", friendId, "notifications"), { type: 'message', senderId: myId, senderName: myName, text: '📷 画像が送信されました', roomId: currentRoomId, createdAt: Date.now(), read: false });
           }
-        } catch (error) { console.error("画像送信エラー:", error); }
+        } catch (error) {}
       };
       reader.readAsDataURL(file); e.target.value = ''; 
     });
@@ -1095,14 +1103,11 @@
       if (!text) return; document.getElementById('chatTextInput').value = '';
       try {
         await addDoc(collection(db, "rooms", currentRoomId, "messages"), { text: text, senderId: myId, senderName: myName, senderIcon: myIconData, createdAt: Date.now() });
-        
         if(chatMode === 'private') {
           const friendId = currentRoomId.replace(myId, '').replace('_', '');
-          await addDoc(collection(db, "users", friendId, "notifications"), {
-            type: 'message', senderId: myId, senderName: myName, text: text, roomId: currentRoomId, createdAt: Date.now(), read: false
-          });
+          await addDoc(collection(db, "users", friendId, "notifications"), { type: 'message', senderId: myId, senderName: myName, text: text, roomId: currentRoomId, createdAt: Date.now(), read: false });
         }
-      } catch (e) { console.error("送信エラー:", e); }
+      } catch (e) {}
     });
 
     document.getElementById('chatTextInput').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) document.getElementById('sendBtn').click(); });
@@ -1112,7 +1117,6 @@
       showScreen('friends'); const area = document.getElementById('friendsListArea'); area.innerHTML = '読み込み中...';
       const friends = getSafeData('chatApp_Friends', []); area.innerHTML = '';
       if(friends.length === 0) { area.innerHTML = '<div style="color:#666; margin-top:20px;">友達がいません</div>'; return; }
-      
       for (const f of friends) {
         let fName = f; let fIcon = '👤';
         try { const userDoc = await getDoc(doc(db, "users", f)); if(userDoc.exists()) { fName = userDoc.data().name; fIcon = userDoc.data().icon; } } catch(e) {}
@@ -1126,21 +1130,12 @@
           </div>
           <button class="delete-btn">削除</button>
         `;
-        d.querySelector('.delete-btn').addEventListener('click', (e) => {
-          e.stopPropagation();
-          if(confirm(`${fName}さんを削除しますか？`)) {
-            let currentFriends = getSafeData('chatApp_Friends', []);
-            currentFriends = currentFriends.filter(id => id !== f);
-            localStorage.setItem('chatApp_Friends', JSON.stringify(currentFriends));
-            d.remove(); if(currentFriends.length === 0) area.innerHTML = '友達がいません';
-          }
-        });
+        d.querySelector('.delete-btn').addEventListener('click', (e) => { e.stopPropagation(); if(confirm(`${fName}さんを削除しますか？`)) { let currentFriends = getSafeData('chatApp_Friends', []); currentFriends = currentFriends.filter(id => id !== f); localStorage.setItem('chatApp_Friends', JSON.stringify(currentFriends)); d.remove(); if(currentFriends.length === 0) area.innerHTML = '友達がいません'; } });
         d.onclick = () => startPrivateChat(f); area.appendChild(d);
       }
     });
     
     document.getElementById('backFromFriendsBtn').addEventListener('click', () => showScreen('home'));
-    
     document.getElementById('openRequestsBtn').addEventListener('click', () => showScreen('requests'));
     document.getElementById('backFromRequestsBtn').addEventListener('click', () => showScreen('home'));
 
@@ -1156,10 +1151,7 @@
     document.getElementById('endGlobalCallBtn').addEventListener('click', () => { if (jitsiApi) { jitsiApi.dispose(); jitsiApi = null; } showScreen('chat'); });
 
     async function openUserMedia() {
-      try {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        document.getElementById('localVideo').srcObject = localStream; document.getElementById('localVideoBox').classList.remove('sharing');
-      } catch (error) { alert('カメラ・マイクの権限を許可してください'); throw error; }
+      try { localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true }); document.getElementById('localVideo').srcObject = localStream; document.getElementById('localVideoBox').classList.remove('sharing'); } catch (error) { alert('カメラ・マイクの権限を許可してください'); throw error; }
     }
 
     function listenForIncomingCalls() {
@@ -1202,20 +1194,9 @@
 
     document.getElementById('toggleMicBtn').addEventListener('click', function() { if(!localStream) return; const t = localStream.getAudioTracks()[0]; t.enabled = !t.enabled; this.classList.toggle('off'); this.textContent = t.enabled ? '🎤' : '🔇'; });
     document.getElementById('toggleCamBtn').addEventListener('click', function() { if(!localStream) return; const t = localStream.getVideoTracks()[0]; t.enabled = !t.enabled; this.classList.toggle('off'); });
-    document.getElementById('shareScreenBtn').addEventListener('click', async function() {
-      if (!isScreenSharing) { try { screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true }); const screenTrack = screenStream.getVideoTracks()[0]; const sender = peerConnection.getSenders().find(s => s.track.kind === 'video'); if (sender) sender.replaceTrack(screenTrack); document.getElementById('localVideo').srcObject = screenStream; document.getElementById('localVideoBox').classList.add('sharing'); isScreenSharing = true; this.style.backgroundColor = '#2ecc71'; screenTrack.onended = () => stopScreenSharing(); } catch (e) {} } else { stopScreenSharing(); }
-    });
-    
+    document.getElementById('shareScreenBtn').addEventListener('click', async function() { if (!isScreenSharing) { try { screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true }); const screenTrack = screenStream.getVideoTracks()[0]; const sender = peerConnection.getSenders().find(s => s.track.kind === 'video'); if (sender) sender.replaceTrack(screenTrack); document.getElementById('localVideo').srcObject = screenStream; document.getElementById('localVideoBox').classList.add('sharing'); isScreenSharing = true; this.style.backgroundColor = '#2ecc71'; screenTrack.onended = () => stopScreenSharing(); } catch (e) {} } else { stopScreenSharing(); } });
     function stopScreenSharing() { if(!isScreenSharing) return; const videoTrack = localStream.getVideoTracks()[0]; const sender = peerConnection.getSenders().find(s => s.track.kind === 'video'); if (sender) sender.replaceTrack(videoTrack); document.getElementById('localVideo').srcObject = localStream; document.getElementById('localVideoBox').classList.remove('sharing'); if(screenStream) screenStream.getTracks().forEach(t => t.stop()); isScreenSharing = false; document.getElementById('shareScreenBtn').style.backgroundColor = '#8e44ad'; }
-    
-    async function hangUp() {
-      if (peerConnection) { peerConnection.close(); peerConnection = null; }
-      if (localStream) { localStream.getTracks().forEach(track => track.stop()); localStream = null; }
-      if (screenStream) { screenStream.getTracks().forEach(track => track.stop()); screenStream = null; }
-      document.getElementById('localVideo').srcObject = null; document.getElementById('remoteVideo').srcObject = null;
-      if (myId && currentFriendId) { await deleteDoc(doc(db, "calls", currentFriendId)).catch(e=>{}); await deleteDoc(doc(db, "calls", myId)).catch(e=>{}); }
-      showScreen('chat'); document.getElementById('toggleMicBtn').classList.remove('off'); document.getElementById('toggleMicBtn').textContent = '🎤'; document.getElementById('toggleCamBtn').classList.remove('off'); document.getElementById('shareScreenBtn').style.backgroundColor = '#8e44ad'; isScreenSharing = false;
-    }
+    async function hangUp() { if (peerConnection) { peerConnection.close(); peerConnection = null; } if (localStream) { localStream.getTracks().forEach(track => track.stop()); localStream = null; } if (screenStream) { screenStream.getTracks().forEach(track => track.stop()); screenStream = null; } document.getElementById('localVideo').srcObject = null; document.getElementById('remoteVideo').srcObject = null; if (myId && currentFriendId) { await deleteDoc(doc(db, "calls", currentFriendId)).catch(e=>{}); await deleteDoc(doc(db, "calls", myId)).catch(e=>{}); } showScreen('chat'); document.getElementById('toggleMicBtn').classList.remove('off'); document.getElementById('toggleMicBtn').textContent = '🎤'; document.getElementById('toggleCamBtn').classList.remove('off'); document.getElementById('shareScreenBtn').style.backgroundColor = '#8e44ad'; isScreenSharing = false; }
     document.getElementById('endCallBtn').addEventListener('click', hangUp);
   </script>
 </body>
