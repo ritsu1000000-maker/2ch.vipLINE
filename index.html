@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>チャット(仮)</title>
+  <title>チャット＆ビデオ通話アプリ</title>
   <script src="https://meet.jit.si/external_api.js"></script>
   <style>
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -26,7 +26,7 @@
     .btn-google:hover { background-color: #3367D6; }
 
     /* エラー表示エリア用 */
-    .error-display { display: none; background-color: #ffe6e6; border: 1px solid #e74c3c; color: #c0392b; padding: 10px; border-radius: 5px; font-size: 12px; text-align: left; width: 90%; margin: 10px auto 0 auto; word-break: break-all; }
+    .error-display { display: none; background-color: #fff0f0; border: 2px solid #e74c3c; color: #c0392b; padding: 15px; border-radius: 8px; font-size: 13px; text-align: left; width: 90%; margin: 10px auto 0 auto; word-break: break-all; line-height: 1.5; }
 
     .my-profile-display { background-color: #e5ddd5; padding: 15px 20px; border-radius: 20px; text-align: center; border: 2px solid #075e54; display: inline-block; margin-bottom: 10px; position: relative; width: 90%; }
     .profile-name { font-size: 20px; font-weight: bold; color: #333; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 10px; }
@@ -124,8 +124,11 @@
       </div>
       <div class="content-area" style="justify-content: flex-start; padding-top: 10px;">
         
-        <div class="section-box" style="margin-bottom: 10px;">
-          <h3 style="margin: 0 0 10px 0; font-size: 16px;">手動で登録</h3>
+        <div id="loginErrorArea" class="error-display"></div>
+
+        <div class="section-box" style="margin-bottom: 10px; border: 2px solid #128C7E;">
+          <h3 style="margin: 0 0 10px 0; font-size: 16px; color: #128C7E;">まずはここから（設定不要！）</h3>
+          <p style="font-size: 11px; color: #666; margin-bottom: 10px;">エラーが出る場合は、こちらの「手動登録」ですぐにアプリを使えます。</p>
           <div class="input-label" style="text-align:center;">アイコン</div>
           <div id="iconPreview" class="chat-icon profile-icon-large" title="画像をタップして変更" style="width:60px; height:60px; font-size:28px;">👤</div>
           <input type="file" id="myIconUpload" accept="image/*" style="display: none;">
@@ -135,11 +138,10 @@
           <button id="loginBtn" class="action-btn" style="margin-top: 5px;">登録してはじめる</button>
         </div>
 
-        <div style="font-size: 13px; color: #666; text-align: center; font-weight: bold; margin-bottom: 5px;">または連携してログイン</div>
+        <div style="font-size: 13px; color: #666; text-align: center; font-weight: bold; margin-bottom: 5px; margin-top: 15px;">または</div>
         
         <button id="googleLoginBtn" class="action-btn btn-google">G Googleアカウントでログイン</button>
         
-        <div id="loginErrorArea" class="error-display"></div>
       </div>
     </div>
 
@@ -226,9 +228,13 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
     import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, setDoc, getDoc, updateDoc, deleteDoc, where } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
-    // インポートをGoogle認証に必要なものだけに絞りました
     import { getAuth, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 
+    /* ==============================================================
+       ★重要：もし自分で新しく作ったFirebaseプロジェクトがある場合は、
+       ここの「firebaseConfig」を自分のものに書き換えてください！
+       書き換えないと「auth/configuration-not-found」が出続けます。
+       ============================================================== */
     const firebaseConfig = {
       apiKey: "AIzaSyBCQArL0Q1wDveRywCpet5Nor3PuRYt7fM",
       authDomain: "sabopennet.firebaseapp.com",
@@ -264,21 +270,21 @@
     function processImage(file, callback) { if (!file) return; const reader = new FileReader(); reader.onload = function(event) { const img = new Image(); img.onload = function() { const canvas = document.createElement('canvas'); const size = 120; canvas.width = size; canvas.height = size; const ctx = canvas.getContext('2d'); let min = Math.min(img.width, img.height); let sx = (img.width - min) / 2; let sy = (img.height - min) / 2; ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size); callback(canvas.toDataURL('image/jpeg', 0.8)); }; img.src = event.target.result; }; reader.readAsDataURL(file); }
     async function saveProfileToDB() { if(!myId) return; try { await setDoc(doc(db, "users", myId), { name: myName, icon: myIconData, id: myId, status: myStatus }, { merge: true }); } catch (e) {} }
 
-    // --- Googleログイン処理 ---
+    // --- Googleログイン処理（エラーを超詳細に教える仕組み） ---
     async function handleGoogleLogin(isSettingScreen = false) {
       const errorArea = isSettingScreen ? document.getElementById('settingsErrorArea') : document.getElementById('loginErrorArea');
       errorArea.style.display = 'none';
       errorArea.innerHTML = '';
 
       const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' }); // アカウント選択画面を強制
+      provider.setCustomParameters({ prompt: 'select_account' });
 
       try {
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
         
         myName = user.displayName || 'Googleユーザー';
-        myId = user.uid; // 重複しないGoogleのID
+        myId = user.uid;
         myIconData = user.photoURL || '👤';
         myStatus = 'Googleでログイン中';
         
@@ -300,21 +306,31 @@
       } catch (error) {
         errorArea.style.display = 'block';
         
-        if(error.code === 'auth/unauthorized-domain') {
-            errorArea.innerHTML = `<b>【ドメイン未許可エラー】</b><br>Firebase管理画面の「Authentication」＞「設定」＞「承認済みドメイン」に<br><b>${window.location.hostname || '現在のURL'}</b><br>を追加してください。ローカルファイル(C:等)では動作しません。`;
+        if(error.code === 'auth/configuration-not-found') {
+            errorArea.innerHTML = `<b>🚨【一番よくあるエラーです】</b><br><br><b>原因:</b><br>プログラムに書かれているプロジェクト（sabopennet）の中で、Googleログインが設定されていません。<br><br><b>直し方:</b><br>もしあなたが<b>新しくFirebaseのプロジェクトを作って設定した</b>のであれば、HTMLコード内にある <code>firebaseConfig</code> の部分（apiKey等）を、<b>ご自身が作った新しいプロジェクトのものに書き換えてください。</b><br><br>※エラーが直るまでは、上の「手動で登録」からすぐにはじめることができます！`;
+        } else if(error.code === 'auth/unauthorized-domain') {
+            errorArea.innerHTML = `<b>【ドメイン未許可エラー】</b><br>Firebase管理画面の「Authentication」＞「設定」＞「承認済みドメイン」に、現在のURLを追加してください。<br>※パソコンのフォルダから直接開いている場合は動きません。`;
         } else if (error.code === 'auth/operation-not-allowed') {
-            errorArea.innerHTML = `<b>【未有効化エラー】</b><br>Firebaseの「Sign-in method」設定で、<b>Google</b> のログイン機能がONになっていません。管理画面から有効にしてください。`;
+            errorArea.innerHTML = `<b>【未有効化エラー】</b><br>Firebaseの管理画面で「Googleログイン」がONになっていません。`;
         } else if (error.code === 'auth/popup-closed-by-user') {
             errorArea.innerHTML = `<b>【キャンセル】</b><br>ログイン画面が途中で閉じられました。`;
         } else {
-            errorArea.innerHTML = `<b>【エラーコード: ${error.code}】</b><br>${error.message}<br><br>※この機能を使わずに、上の「手動で登録」から始めることもできます。`;
+            errorArea.innerHTML = `<b>【エラーコード: ${error.code}】</b><br>${error.message}`;
         }
       }
     }
 
-    // Googleログインボタンのクリック処理
     document.getElementById('googleLoginBtn').addEventListener('click', () => handleGoogleLogin(false));
     document.getElementById('settingsGoogleLoginBtn').addEventListener('click', () => handleGoogleLogin(true));
+
+    /* --- 手動ログイン処理（設定不要ですぐ使える） --- */
+    document.getElementById('loginBtn').addEventListener('click', async () => {
+      document.getElementById('loginErrorArea').style.display = 'none';
+      const n = document.getElementById('myNameInput').value.trim(); const id = document.getElementById('myIdInput').value.trim(); const s = document.getElementById('myStatusInput').value.trim(); if (!n || !id) return alert('表示名とIDを入力してください');
+      myName = n; myId = id; myStatus = s; localStorage.setItem('chatApp_MyName', myName); localStorage.setItem('chatApp_MyId', myId); localStorage.setItem('chatApp_MyIcon', myIconData); localStorage.setItem('chatApp_MyStatus', myStatus); document.getElementById('displayMyName').textContent = myName; document.getElementById('displayMyId').textContent = myId; document.getElementById('displayMyStatus').textContent = myStatus; setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
+      await saveProfileToDB(); showScreen('home'); listenForIncomingCalls(); listenForFriendRequests(); listenForAcceptedRequests(); listenForNotifications();
+      if (window.pendingFriendId) { processUrlFriend(window.pendingFriendId); window.pendingFriendId = null; } if (window.pendingRoomId) { processUrlRoom(window.pendingRoomId); window.pendingRoomId = null; }
+    });
 
     /* --- オンライン・チャット・通話等の既存機能 --- */
     async function setOnlineStatus(roomId) { if (!myId) return; try { await setDoc(doc(db, "online_users", myId), { roomId: roomId, name: myName, icon: myIconData, timestamp: Date.now(), id: myId }); } catch (e) { } }
@@ -349,14 +365,6 @@
     document.getElementById('closeQrBtn').addEventListener('click', () => { document.getElementById('qrModal').style.display = 'none'; });
     document.getElementById('iconPreview').addEventListener('click', () => document.getElementById('myIconUpload').click());
     document.getElementById('myIconUpload').addEventListener('change', (e) => { processImage(e.target.files[0], (dataUrl) => { myIconData = dataUrl; setIconDisplay(document.getElementById('iconPreview'), myIconData); }); });
-
-    document.getElementById('loginBtn').addEventListener('click', async () => {
-      document.getElementById('loginErrorArea').style.display = 'none';
-      const n = document.getElementById('myNameInput').value.trim(); const id = document.getElementById('myIdInput').value.trim(); const s = document.getElementById('myStatusInput').value.trim(); if (!n || !id) return alert('表示名とIDを入力してください');
-      myName = n; myId = id; myStatus = s; localStorage.setItem('chatApp_MyName', myName); localStorage.setItem('chatApp_MyId', myId); localStorage.setItem('chatApp_MyIcon', myIconData); localStorage.setItem('chatApp_MyStatus', myStatus); document.getElementById('displayMyName').textContent = myName; document.getElementById('displayMyId').textContent = myId; document.getElementById('displayMyStatus').textContent = myStatus; setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
-      await saveProfileToDB(); showScreen('home'); listenForIncomingCalls(); listenForFriendRequests(); listenForAcceptedRequests(); listenForNotifications();
-      if (window.pendingFriendId) { processUrlFriend(window.pendingFriendId); window.pendingFriendId = null; } if (window.pendingRoomId) { processUrlRoom(window.pendingRoomId); window.pendingRoomId = null; }
-    });
 
     document.getElementById('addFriendBtn').addEventListener('click', () => { const id = document.getElementById('friendIdInput').value.trim(); if(id) processUrlFriend(id); });
     document.getElementById('backFromUserProfileBtn').addEventListener('click', () => showScreen('home'));
