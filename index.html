@@ -192,6 +192,10 @@
           <input type="text" id="myIdInput" class="text-input" placeholder="例: taro_123">
           
           <button id="loginBtn" class="action-btn" style="margin-top: 5px;">登録してはじめる</button>
+
+          <div style="margin: 15px 0; font-size: 13px; color: #666; text-align: center; font-weight: bold;">または</div>
+          <button id="googleLoginBtn" class="action-btn" style="background-color: #4285F4; margin-top: 5px;">Googleアカウントでログイン</button>
+          
         </div>
       </div>
     </div>
@@ -280,6 +284,8 @@
         </div>
         
         <div class="section-box">
+          <button id="settingsGoogleLoginBtn" class="action-btn" style="background-color: #4285F4; margin-bottom: 15px;">Googleアカウントと連携 / ログイン</button>
+
           <button id="logoutBtn" class="action-btn" style="background-color: #e74c3c;">ログアウト</button>
           <p style="font-size: 11px; color: #888; margin-top: 8px;">※端末内のデータがリセットされます</p>
         </div>
@@ -396,6 +402,8 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
     import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, setDoc, getDoc, updateDoc, deleteDoc, where } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+    // Firebase Auth のインポート
+    import { getAuth, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBCQArL0Q1wDveRywCpet5Nor3PuRYt7fM",
@@ -405,8 +413,12 @@
       messagingSenderId: "284308308452",
       appId: "1:284308308452:web:e36dd991e55a0e60e4c7f1"
     };
+    
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    // Authの初期化
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
 
     let myName = '', myId = '', myIconData = '👤', myStatus = '';
     let tempIconData = ''; 
@@ -437,6 +449,7 @@
 
     function setIconDisplay(element, iconValue) {
       if (iconValue && iconValue.startsWith('data:image')) { element.style.backgroundImage = `url(${iconValue})`; element.textContent = ''; } 
+      else if (iconValue && iconValue.startsWith('http')) { element.style.backgroundImage = `url(${iconValue})`; element.textContent = ''; }
       else { element.style.backgroundImage = 'none'; element.textContent = iconValue || '👤'; }
     }
 
@@ -496,7 +509,7 @@
           iconSpan.style.width = '20px'; iconSpan.style.height = '20px'; iconSpan.style.borderRadius = '50%'; iconSpan.style.display = 'inline-flex';
           iconSpan.style.alignItems = 'center'; iconSpan.style.justifyContent = 'center'; iconSpan.style.backgroundSize = 'cover'; iconSpan.style.backgroundPosition = 'center';
           iconSpan.style.marginRight = '5px'; iconSpan.style.backgroundColor = '#bdc3c7'; iconSpan.style.fontSize = '11px';
-          if(data.icon && data.icon.startsWith('data:')){ iconSpan.style.backgroundImage = `url(${data.icon})`; } else { iconSpan.textContent = data.icon || '👤'; }
+          if(data.icon && (data.icon.startsWith('data:') || data.icon.startsWith('http'))){ iconSpan.style.backgroundImage = `url(${data.icon})`; } else { iconSpan.textContent = data.icon || '👤'; }
           const nameSpan = document.createElement('span'); nameSpan.style.fontWeight = 'bold'; nameSpan.textContent = data.name || '名無し';
           badge.appendChild(iconSpan); badge.appendChild(nameSpan); listDiv.appendChild(badge);
         });
@@ -597,7 +610,7 @@
               d.className = 'friend-item';
               d.innerHTML = `
                 <div class="friend-info">
-                  <div class="chat-icon" style="${req.senderIcon && req.senderIcon.startsWith('data:') ? 'background-image:url('+req.senderIcon+');' : ''}">${req.senderIcon && req.senderIcon.startsWith('data:') ? '' : (req.senderIcon || '👤')}</div>
+                  <div class="chat-icon" style="${req.senderIcon && (req.senderIcon.startsWith('data:') || req.senderIcon.startsWith('http')) ? 'background-image:url('+req.senderIcon+');' : ''}">${req.senderIcon && (req.senderIcon.startsWith('data:') || req.senderIcon.startsWith('http')) ? '' : (req.senderIcon || '👤')}</div>
                   <div class="friend-id">${req.senderName}<br><span style="font-size:11px;color:#888;font-weight:normal;">ID: ${req.senderId}</span></div>
                 </div>
                 <div style="display:flex; gap:5px;">
@@ -622,7 +635,6 @@
         
         if(pendingCount === 0 && receivedArea) receivedArea.innerHTML = '<div style="font-size:12px; color:#666;">受信した申請はありません</div>';
         
-        // ★修正点：申請リストの通知バッジの表示制御
         const reqBadge = document.getElementById('requestNotificationBadge');
         if (reqBadge) {
           if (pendingCount > 0) {
@@ -792,7 +804,16 @@
       await saveProfileToDB(); alert('設定を保存しました！'); showScreen('home');
     });
 
-    document.getElementById('logoutBtn').addEventListener('click', () => { if (confirm('ログアウトしますか？')) { localStorage.clear(); location.reload(); } });
+    // ログアウト処理
+    document.getElementById('logoutBtn').addEventListener('click', async () => { 
+      if (confirm('ログアウトしますか？')) { 
+        try {
+          await signOut(auth);
+        } catch(e) {}
+        localStorage.clear(); 
+        location.reload(); 
+      } 
+    });
 
     document.getElementById('showQrBtn').addEventListener('click', () => {
       const shareUrl = window.location.origin + window.location.pathname + '?friend=' + encodeURIComponent(myId);
@@ -835,6 +856,86 @@
 
       if (window.pendingFriendId) { processUrlFriend(window.pendingFriendId); window.pendingFriendId = null; }
       if (window.pendingRoomId) { processUrlRoom(window.pendingRoomId); window.pendingRoomId = null; }
+    });
+
+    // 初期設定画面からのGoogleログイン
+    document.getElementById('googleLoginBtn').addEventListener('click', async () => {
+      try {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+        
+        myName = user.displayName || 'Googleユーザー';
+        myId = user.uid;
+        myIconData = user.photoURL || '👤';
+        myStatus = 'Googleアカウントでログイン中';
+        
+        localStorage.setItem('chatApp_MyName', myName); 
+        localStorage.setItem('chatApp_MyId', myId); 
+        localStorage.setItem('chatApp_MyIcon', myIconData); 
+        localStorage.setItem('chatApp_MyStatus', myStatus);
+        
+        document.getElementById('displayMyName').textContent = myName; 
+        document.getElementById('displayMyId').textContent = myId; 
+        document.getElementById('displayMyStatus').textContent = myStatus;
+        setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
+        
+        await saveProfileToDB(); 
+        showScreen('home'); 
+        listenForIncomingCalls(); 
+        listenForFriendRequests(); 
+        listenForAcceptedRequests(); 
+        listenForNotifications();
+
+        if (window.pendingFriendId) { processUrlFriend(window.pendingFriendId); window.pendingFriendId = null; }
+        if (window.pendingRoomId) { processUrlRoom(window.pendingRoomId); window.pendingRoomId = null; }
+      } catch (error) {
+        console.error("Googleログインエラー:", error);
+        alert('ログインに失敗しました。');
+      }
+    });
+
+    // 追記箇所: 設定画面からのGoogleログイン（連携）
+    document.getElementById('settingsGoogleLoginBtn').addEventListener('click', async () => {
+      try {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+        
+        // Googleのアカウント情報で上書き
+        myName = user.displayName || 'Googleユーザー';
+        myId = user.uid; // 重複しないGoogleのユーザーIDを使用
+        myIconData = user.photoURL || '👤';
+        myStatus = 'Googleアカウントでログイン中';
+        
+        // アプリケーション内の状態を更新
+        localStorage.setItem('chatApp_MyName', myName); 
+        localStorage.setItem('chatApp_MyId', myId); 
+        localStorage.setItem('chatApp_MyIcon', myIconData); 
+        localStorage.setItem('chatApp_MyStatus', myStatus);
+        
+        document.getElementById('displayMyName').textContent = myName; 
+        document.getElementById('displayMyId').textContent = myId; 
+        document.getElementById('displayMyStatus').textContent = myStatus;
+        setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
+        
+        // 設定画面のプレビュー等も更新
+        document.getElementById('settingsNameInput').value = myName; 
+        document.getElementById('settingsStatusInput').value = myStatus;
+        tempIconData = myIconData; 
+        setIconDisplay(document.getElementById('settingsIconPreview'), tempIconData);
+        
+        await saveProfileToDB(); 
+        
+        // すでにリスナーが動いていればそのまま、動いていなければ起動
+        if (!incomingCallUnsubscribe) listenForIncomingCalls(); 
+        if (!chatUnsubscribe && currentRoomId) subscribeToChatRoom(currentRoomId);
+        // （その他のリスナーも適宜）
+        
+        alert('Googleアカウントでログイン（連携）しました！');
+        showScreen('home'); 
+      } catch (error) {
+        console.error("Googleログインエラー:", error);
+        alert('ログインに失敗しました。');
+      }
     });
 
     document.getElementById('addFriendBtn').addEventListener('click', () => { const id = document.getElementById('friendIdInput').value.trim(); if(id) processUrlFriend(id); });
@@ -1016,8 +1117,8 @@
         let fName = f; let fIcon = '👤';
         try { const userDoc = await getDoc(doc(db, "users", f)); if(userDoc.exists()) { fName = userDoc.data().name; fIcon = userDoc.data().icon; } } catch(e) {}
         const d = document.createElement('div'); d.className = 'friend-item';
-        const bgStyle = fIcon.startsWith('data:') ? `background-image:url(${fIcon});` : '';
-        const txt = fIcon.startsWith('data:') ? '' : fIcon;
+        const bgStyle = fIcon.startsWith('data:') || fIcon.startsWith('http') ? `background-image:url(${fIcon});` : '';
+        const txt = fIcon.startsWith('data:') || fIcon.startsWith('http') ? '' : fIcon;
         d.innerHTML = `
           <div class="friend-info">
             <div class="chat-icon" style="${bgStyle}">${txt}</div>
