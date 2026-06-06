@@ -3,74 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>チャット＆ビデオ通話アプリ (スマホ最適化版)</title>
+  <title>チャット＆ビデオ通話アプリ (フルバージョン)</title>
   <script src="https://meet.jit.si/external_api.js"></script>
   <style>
-    /* ＝＝＝ 全体の基本設定 ＝＝＝ */
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body { 
-      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI', Hiragino Kaku Gothic ProN, HiraKakuProN-W3, Arial, sans-serif; 
-      background-color: #f0f2f5; 
-      display: flex; 
-      justify-content: center; 
-      align-items: center; 
-      height: 100vh; 
-      height: 100dvh; 
-      margin: 0; 
-      overflow: hidden; 
-    }
-    .app-container { 
-      width: 100%; 
-      max-width: 500px; 
-      height: 100%; 
-      height: 100dvh; 
-      background-color: #fff; 
-      position: relative; 
-      overflow: hidden; 
-      display: flex; 
-      flex-direction: column; 
-    }
-    @media (min-width: 501px) {
-      .app-container { height: 92vh; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
-    }
-
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI', sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; height: 100dvh; margin: 0; overflow: hidden; }
+    .app-container { width: 100%; max-width: 500px; height: 100%; height: 100dvh; background-color: #fff; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+    @media (min-width: 501px) { .app-container { height: 92vh; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); } }
     .screen { display: none; flex-direction: column; height: 100%; flex: 1; overflow: hidden; }
     .screen.active { display: flex; }
-    
-    .header { 
-      background-color: #075e54; 
-      color: white; 
-      padding: 12px 15px; 
-      text-align: center; 
-      font-size: 17px; 
-      font-weight: bold; 
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center; 
-      z-index: 5; 
-      height: 55px;
-      flex-shrink: 0;
-    }
-
+    .header { background-color: #075e54; color: white; padding: 12px 15px; text-align: center; font-size: 17px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; z-index: 5; height: 55px; flex-shrink: 0; }
     .weather-widget { font-size: 12px; font-weight: normal; background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 15px; cursor: pointer; display: flex; align-items: center; gap: 3px; }
     .content-area { padding: 20px 15px; display: flex; flex-direction: column; align-items: center; gap: 15px; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
     .section-box { width: 100%; background: #f9f9f9; border-radius: 10px; padding: 15px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 5px; }
     .input-label { text-align: left; font-size: 13px; color: #333; font-weight: bold; margin-bottom: 5px; width: 90%; margin-left: auto; margin-right: auto; }
-    
     .text-input { padding: 12px; width: 90%; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; margin-bottom: 12px; box-sizing: border-box; }
-    
     .action-btn { background-color: #128C7E; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-size: 15px; font-weight: bold; width: 90%; transition: background-color 0.2s; }
     .action-btn:hover { background-color: #0b7366; }
     .global-btn { background-color: #e67e22; }
 
-    /* ソーシャルログインボタンのスタイル */
-    .social-login-grid {
-      display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; width: 90%; margin: 0 auto;
-    }
-    .social-btn {
-      flex: 1 1 calc(50% - 8px); padding: 10px 5px; border: none; border-radius: 5px; color: white; 
-      font-weight: bold; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;
-    }
+    /* ソーシャルログインボタングリッド */
+    .social-login-grid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; width: 90%; margin: 0 auto; }
+    .social-btn { flex: 1 1 calc(50% - 8px); padding: 10px 5px; border: none; border-radius: 5px; color: white; font-weight: bold; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; }
     .btn-google { background: #4285F4; }
     .btn-line { background: #06C755; }
     .btn-discord { background: #5865F2; }
@@ -88,24 +42,18 @@
     .profile-status { font-size: 13px; color: #555; margin-bottom: 12px; word-break: break-word; background: rgba(255,255,255,0.7); padding: 8px; border-radius: 8px; }
     .profile-id { font-size: 13px; color: #666; }
     .edit-name-btn { background-color: #7f8c8d; color: white; border: none; padding: 8px 15px; border-radius: 20px; font-size: 13px; cursor: pointer; font-weight: bold; margin: 3px 0; width: 100%; max-width: 220px; }
-    
     .chat-icon { width: 45px; height: 45px; border-radius: 50%; background-color: #bdc3c7; background-size: cover; background-position: center; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 2px solid #fff; }
     .profile-icon-large { width: 75px; height: 75px; font-size: 35px; margin: 0 auto 10px auto; cursor: pointer; transition: opacity 0.2s; }
-
     .header-btn-wrapper { position: relative; display: inline-block; }
     .badge { background-color: #e74c3c; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; position: absolute; top: 0px; right: -5px; display: none; font-weight: bold;}
-    
     .friend-item { background: #f9f9f9; padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; width: 100%; box-sizing: border-box; cursor: pointer; border: 1px solid #eee;}
     .friend-info { display: flex; align-items: center; gap: 12px; }
     .friend-id { font-size: 16px; font-weight: bold; color: #333; text-align: left; line-height: 1.3; }
     .delete-btn { background-color: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px;}
-    
     .unread { background-color: #e6f2ff !important; border-color: #b3d7ff; font-weight: bold; }
     .unread-dot { color: #e74c3c; font-size: 12px; }
-
     .notification { position: absolute; top: -100px; left: 50%; transform: translateX(-50%); background-color: #25D366; color: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); width: 85%; text-align: center; font-size: 15px; font-weight: bold; cursor: pointer; transition: top 0.4s ease-in-out; z-index: 1000; }
     .notification.show { top: 20px; }
-    
     .messages { flex: 1; padding: 15px; overflow-y: auto; background-image: url('https://www.transparenttextures.com/patterns/cubes.png'); background-color: #e5ddd5; display: flex; flex-direction: column; gap: 12px; -webkit-overflow-scrolling: touch; }
     .msg-row { display: flex; align-items: flex-start; gap: 8px; width: 100%; margin-bottom: 2px; }
     .msg-row.mine { flex-direction: row-reverse; }
@@ -118,21 +66,16 @@
     .msg a { color: #0066cc; text-decoration: underline; }
     .msg img.chat-image { max-width: 100%; max-height: 200px; border-radius: 8px; object-fit: contain; margin-top: 5px; }
     .msg-time { font-size: 10px; color: #888; text-align: right; margin-top: 4px; }
-
     .chat-input-area { display: flex; padding: 10px; background-color: #f0f0f0; align-items: center; gap: 8px; flex-shrink: 0; height: 60px; }
     #imageSendBtn { background: none; border: none; font-size: 22px; cursor: pointer; padding: 5px; }
     #chatTextInput { flex: 1; padding: 10px 15px; border: 1px solid #ddd; border-radius: 20px; outline: none; font-size: 16px; background: #fff; height: 40px; }
     #sendBtn { background-color: #128C7E; color: white; border: none; padding: 0 15px; border-radius: 20px; cursor: pointer; font-size: 15px; font-weight: bold; height: 40px; display: flex; align-items: center; justify-content: center; }
-    
     .back-btn { background: none; border: none; color: white; font-size: 16px; cursor: pointer; padding: 5px; }
     .header-icon-btn { background: none; border: none; color: white; font-size: 20px; cursor: pointer; margin-left: 8px; padding: 5px; }
-    
     #onlineCountDisplay { font-size: 12px; background: rgba(0,0,0,0.3); padding: 3px 8px; border-radius: 12px; margin-left: 5px; cursor: pointer; display: none; }
     #onlineMembersList { display: none; background: #fff; padding: 10px; border-bottom: 1px solid #ccc; max-height: 100px; overflow-y: auto; gap: 8px; flex-wrap: wrap; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex-shrink: 0; }
     .member-badge { display: inline-flex; align-items: center; background: #f1f1f1; padding: 4px 8px; border-radius: 20px; border: 1px solid #ddd; font-size: 13px; color: #333; }
-
     .link-btn { display: inline-block; background-color: #34495e; margin-top: 10px; text-align: center; }
-
     .call-theme { background-color: #2c3e50; color: white; justify-content: space-between; padding-bottom: 20px; }
     .video-container { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; gap: 10px; padding: 10px; position: relative; overflow: hidden; }
     .videos-wrapper { display: flex; flex-direction: column; width: 100%; height: 100%; gap: 10px; flex: 1; }
@@ -141,21 +84,17 @@
     .video-box.mine video { transform: scaleX(-1); }
     .video-box.mine.sharing video { transform: none; }
     .video-label { position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 5px; font-size: 12px; z-index: 2; }
-    
     .call-controls { display: flex; gap: 15px; justify-content: center; width: 100%; padding: 10px 0; flex-shrink: 0; }
     .call-btn-circle { width: 55px; height: 55px; border-radius: 50%; border: none; color: white; font-size: 22px; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); background-color: #34495e; }
     .call-btn-circle.off { background-color: #e67e22; }
     .btn-red { background-color: #e74c3c; }
-
     .incoming-call-alert { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); background: #f39c12; color: white; padding: 15px 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.4); z-index: 2000; text-align: center; display: none; flex-direction: column; gap: 12px; font-size: 16px; font-weight: bold; width: 90%; }
     .incoming-btns { display: flex; gap: 12px; justify-content: center; }
     .inc-btn { padding: 8px 16px; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; color: white; flex: 1; }
     .btn-answer { background: #27ae60; }
     .btn-reject { background: #c0392b; }
-
     .qr-modal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; padding: 20px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 3000; text-align: center; display: none; flex-direction: column; gap: 12px; color: #333; font-weight: bold; width: 85%; max-width: 300px; }
     #qrImage { margin: 0 auto; display: block; width: 180px; height: 180px; border-radius: 8px; border: 1px solid #ccc; }
-    
     #jitsiContainer { flex: 1; width: 100%; background: #000; }
   </style>
 </head>
@@ -272,7 +211,6 @@
               <span id="requestNotificationBadge" class="badge" style="top: -5px; right: -5px;"></span>
             </div>
           </div>
-
         </div>
       </div>
     </div>
@@ -297,18 +235,15 @@
           <div class="input-label" style="text-align: center;">画像（タップで変更）</div>
           <div id="settingsIconPreview" class="chat-icon profile-icon-large" title="画像をタップして変更">👤</div>
           <input type="file" id="settingsIconUpload" accept="image/*" style="display: none;">
-          
           <div class="input-label">表示名</div>
           <input type="text" id="settingsNameInput" class="text-input" placeholder="名前">
-          
           <div class="input-label">ひとこと</div>
           <input type="text" id="settingsStatusInput" class="text-input" placeholder="ステータスメッセージ">
-          
           <button id="saveSettingsBtn" class="action-btn">保存する</button>
         </div>
         
         <div class="section-box">
-          <h4 style="margin: 0 0 10px 0; text-align: left; font-size: 13px;">🔗 アカウント連携</h4>
+          <h4 style="margin: 0 0 10px 0; text-align: left; font-size: 13px;">🔗 アカウント連携（後から連携）</h4>
           <div class="social-login-grid" style="margin-bottom: 15px;">
             <button class="social-btn btn-google" data-provider="google">Google</button>
             <button class="social-btn btn-line" data-provider="line">LINE</button>
@@ -316,9 +251,8 @@
             <button class="social-btn btn-x" data-provider="twitter">𝕏</button>
             <button class="social-btn btn-apple" data-provider="apple">Apple</button>
             <button class="social-btn btn-github" data-provider="github">GitHub</button>
-            <button class="social-btn btn-amazon" data-provider="amazon" style="flex: 1 1 100%;">他連携</button>
+            <button class="social-btn btn-amazon" data-provider="amazon" style="flex: 1 1 100%;">Amazon</button>
           </div>
-
           <button id="logoutBtn" class="action-btn" style="background-color: #e74c3c;">ログアウト</button>
           <p style="font-size: 11px; color: #888; margin-top: 8px;">※端末内のデータがリセットされます</p>
         </div>
@@ -380,14 +314,11 @@
           <button id="startGlobalCallBtn" class="header-icon-btn" title="全体通話" style="display:none; font-size: 22px;">📞</button>
         </div>
       </div>
-
       <div id="chatSearchArea" style="display:none; padding: 8px 10px; background: #fff; border-bottom: 1px solid #ddd; flex-shrink: 0;">
         <input type="text" id="chatSearchInput" class="text-input" placeholder="メッセージを検索..." style="width:100%; margin:0; padding: 8px; font-size:14px;">
       </div>
-      
       <div id="onlineMembersList"></div>
       <div class="messages" id="msgArea"></div>
-      
       <div class="chat-input-area">
         <button id="imageSendBtn" title="画像を送信">🖼️</button>
         <input type="file" id="chatImageInput" accept="image/*,image/gif" style="display: none;">
@@ -435,7 +366,6 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
     import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, setDoc, getDoc, updateDoc, deleteDoc, where } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
-    // あらゆるプロバイダをインポート
     import { getAuth, signInWithPopup, GoogleAuthProvider, GithubAuthProvider, TwitterAuthProvider, FacebookAuthProvider, OAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -451,7 +381,7 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    /* ＝＝＝ ログインプロバイダの準備 ＝＝＝ */
+    // プロバイダ設定
     const providers = {
       google: new GoogleAuthProvider(),
       github: new GithubAuthProvider(),
@@ -460,7 +390,6 @@
       apple: new OAuthProvider('apple.com'),
       microsoft: new OAuthProvider('microsoft.com'),
       yahoo: new OAuthProvider('yahoo.com'),
-      /* 以下は Firebase Identity Platform で OIDC(OpenID Connect) として設定が必要 */
       line: new OAuthProvider('oidc.line'),
       discord: new OAuthProvider('oidc.discord'),
       twitch: new OAuthProvider('oidc.twitch'),
@@ -525,6 +454,7 @@
       catch (e) { console.error("プロフィール保存エラー:", e); }
     }
 
+    /* --- オンライン・ルーム管理 --- */
     async function setOnlineStatus(roomId) {
       if (!myId) return;
       try { await setDoc(doc(db, "online_users", myId), { roomId: roomId, name: myName, icon: myIconData, timestamp: Date.now(), id: myId }); } catch (e) { }
@@ -544,13 +474,9 @@
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
           const badge = document.createElement('div'); badge.className = 'member-badge';
-          
           if (docSnap.id !== myId) {
-            badge.style.cursor = 'pointer';
-            badge.title = 'プロフィールを見る';
-            badge.onclick = () => { processUrlFriend(docSnap.id); };
+            badge.style.cursor = 'pointer'; badge.title = 'プロフィールを見る'; badge.onclick = () => { processUrlFriend(docSnap.id); };
           }
-
           const iconSpan = document.createElement('span');
           iconSpan.style.width = '20px'; iconSpan.style.height = '20px'; iconSpan.style.borderRadius = '50%'; iconSpan.style.display = 'inline-flex';
           iconSpan.style.alignItems = 'center'; iconSpan.style.justifyContent = 'center'; iconSpan.style.backgroundSize = 'cover'; iconSpan.style.backgroundPosition = 'center';
@@ -561,43 +487,27 @@
         });
       });
     }
-
-    document.getElementById('onlineCountDisplay').addEventListener('click', () => {
-      const listDiv = document.getElementById('onlineMembersList');
-      if (listDiv.style.display === 'flex') listDiv.style.display = 'none'; else listDiv.style.display = 'flex';
-    });
+    document.getElementById('onlineCountDisplay').addEventListener('click', () => { const listDiv = document.getElementById('onlineMembersList'); listDiv.style.display = listDiv.style.display === 'flex' ? 'none' : 'flex'; });
     window.addEventListener('beforeunload', () => { removeOnlineStatus(); });
 
+    /* --- 友達＆チャット --- */
     async function processUrlFriend(fId) {
       if (!fId) return;
       if (fId === myId) return alert("自分のIDです");
-      
       const userDoc = await getDoc(doc(db, "users", fId));
       if (userDoc.exists()) {
         const data = userDoc.data();
-        document.getElementById('targetUserName').textContent = data.name;
-        document.getElementById('targetUserId').textContent = data.id;
-        document.getElementById('targetUserStatus').textContent = data.status || '（一言メッセージは未設定です）';
+        document.getElementById('targetUserName').textContent = data.name; document.getElementById('targetUserId').textContent = data.id; document.getElementById('targetUserStatus').textContent = data.status || '（一言メッセージは未設定です）';
         setIconDisplay(document.getElementById('targetUserIcon'), data.icon);
-        
         const btn = document.getElementById('sendRequestBtn');
         let f = getSafeData('chatApp_Friends', []); 
-        
         if(f.includes(fId)) {
-          btn.textContent = 'チャットを開く';
-          btn.style.backgroundColor = '#128C7E';
-          btn.onclick = () => {
-            startPrivateChat(fId);
-            window.history.replaceState({}, document.title, window.location.pathname);
-          };
+          btn.textContent = 'チャットを開く'; btn.style.backgroundColor = '#128C7E';
+          btn.onclick = () => { startPrivateChat(fId); window.history.replaceState({}, document.title, window.location.pathname); };
         } else {
-          btn.textContent = '友達リクエストを送信';
-          btn.style.backgroundColor = '#27ae60';
+          btn.textContent = '友達リクエストを送信'; btn.style.backgroundColor = '#27ae60';
           btn.onclick = async () => {
-            try {
-              await addDoc(collection(db, "friend_requests"), { senderId: myId, senderName: myName, senderIcon: myIconData, receiverId: data.id, status: "pending", createdAt: Date.now() });
-              alert("友達リクエストを送信しました！"); showScreen('home');
-            } catch(e) { alert("送信に失敗しました。"); }
+            try { await addDoc(collection(db, "friend_requests"), { senderId: myId, senderName: myName, senderIcon: myIconData, receiverId: data.id, status: "pending", createdAt: Date.now() }); alert("友達リクエストを送信しました！"); showScreen('home'); } catch(e) { alert("送信に失敗しました。"); }
           };
         }
         showScreen('userProfile');
@@ -616,119 +526,64 @@
       window.history.replaceState({}, document.title, window.location.pathname);
     }
 
+    /* --- リスナー群 --- */
     function listenForFriendRequests() {
       const q = query(collection(db, "friend_requests"), where("receiverId", "==", myId));
       onSnapshot(q, (snapshot) => {
-        const receivedArea = document.getElementById('receivedRequestsArea');
-        if(receivedArea) receivedArea.innerHTML = '';
+        const receivedArea = document.getElementById('receivedRequestsArea'); if(receivedArea) receivedArea.innerHTML = '';
         let pendingCount = 0;
-
         snapshot.docChanges().forEach((change) => {
           if (change.type === "added") {
             const req = change.doc.data(); const reqId = change.doc.id;
             if(req.status !== "pending") return;
-            document.getElementById('requestSenderName').textContent = req.senderName;
-            document.getElementById('friendRequestAlert').style.display = 'flex';
+            document.getElementById('requestSenderName').textContent = req.senderName; document.getElementById('friendRequestAlert').style.display = 'flex';
             document.getElementById('acceptReqBtn').onclick = async () => {
-              document.getElementById('friendRequestAlert').style.display = 'none';
-              let f = getSafeData('chatApp_Friends', []);
-              if(!f.includes(req.senderId)) f.push(req.senderId);
-              localStorage.setItem('chatApp_Friends', JSON.stringify(f));
-              await updateDoc(doc(db, "friend_requests", reqId), { status: "accepted" });
-              alert(`${req.senderName}さんと友達になりました！`);
+              document.getElementById('friendRequestAlert').style.display = 'none'; let f = getSafeData('chatApp_Friends', []); if(!f.includes(req.senderId)) f.push(req.senderId); localStorage.setItem('chatApp_Friends', JSON.stringify(f)); await updateDoc(doc(db, "friend_requests", reqId), { status: "accepted" }); alert(`${req.senderName}さんと友達になりました！`);
             };
-            document.getElementById('rejectReqBtn').onclick = async () => {
-              document.getElementById('friendRequestAlert').style.display = 'none';
-              await deleteDoc(doc(db, "friend_requests", reqId));
-            };
+            document.getElementById('rejectReqBtn').onclick = async () => { document.getElementById('friendRequestAlert').style.display = 'none'; await deleteDoc(doc(db, "friend_requests", reqId)); };
           }
         });
-
         snapshot.forEach(docSnap => {
-          const req = docSnap.data();
-          const reqId = docSnap.id;
+          const req = docSnap.data(); const reqId = docSnap.id;
           if(req.status === "pending") {
             pendingCount++;
             if(receivedArea) {
-              const d = document.createElement('div');
-              d.className = 'friend-item';
-              d.innerHTML = `
-                <div class="friend-info">
-                  <div class="chat-icon" style="${req.senderIcon && (req.senderIcon.startsWith('data:') || req.senderIcon.startsWith('http')) ? 'background-image:url('+req.senderIcon+');' : ''}">${req.senderIcon && (req.senderIcon.startsWith('data:') || req.senderIcon.startsWith('http')) ? '' : (req.senderIcon || '👤')}</div>
-                  <div class="friend-id">${req.senderName}<br><span style="font-size:11px;color:#888;font-weight:normal;">ID: ${req.senderId}</span></div>
-                </div>
-                <div style="display:flex; gap:5px;">
-                  <button class="inc-btn btn-answer" style="padding: 6px 10px; font-size:12px;">承認</button>
-                  <button class="inc-btn btn-reject" style="padding: 6px 10px; font-size:12px; background:#e74c3c;">拒否</button>
-                </div>
-              `;
-              d.querySelector('.btn-answer').onclick = async () => {
-                let f = getSafeData('chatApp_Friends', []);
-                if(!f.includes(req.senderId)) f.push(req.senderId);
-                localStorage.setItem('chatApp_Friends', JSON.stringify(f));
-                await updateDoc(doc(db, "friend_requests", reqId), { status: "accepted" });
-                alert(`${req.senderName}さんと友達になりました！`);
-              };
-              d.querySelector('.btn-reject').onclick = async () => {
-                if(confirm('この申請を拒否しますか？')) await deleteDoc(doc(db, "friend_requests", reqId));
-              };
+              const d = document.createElement('div'); d.className = 'friend-item';
+              d.innerHTML = `<div class="friend-info"><div class="chat-icon" style="${req.senderIcon && (req.senderIcon.startsWith('data:') || req.senderIcon.startsWith('http')) ? 'background-image:url('+req.senderIcon+');' : ''}">${req.senderIcon && (req.senderIcon.startsWith('data:') || req.senderIcon.startsWith('http')) ? '' : (req.senderIcon || '👤')}</div><div class="friend-id">${req.senderName}<br><span style="font-size:11px;color:#888;font-weight:normal;">ID: ${req.senderId}</span></div></div><div style="display:flex; gap:5px;"><button class="inc-btn btn-answer" style="padding: 6px 10px; font-size:12px;">承認</button><button class="inc-btn btn-reject" style="padding: 6px 10px; font-size:12px; background:#e74c3c;">拒否</button></div>`;
+              d.querySelector('.btn-answer').onclick = async () => { let f = getSafeData('chatApp_Friends', []); if(!f.includes(req.senderId)) f.push(req.senderId); localStorage.setItem('chatApp_Friends', JSON.stringify(f)); await updateDoc(doc(db, "friend_requests", reqId), { status: "accepted" }); alert(`${req.senderName}さんと友達になりました！`); };
+              d.querySelector('.btn-reject').onclick = async () => { if(confirm('この申請を拒否しますか？')) await deleteDoc(doc(db, "friend_requests", reqId)); };
               receivedArea.appendChild(d);
             }
           }
         });
-        
         if(pendingCount === 0 && receivedArea) receivedArea.innerHTML = '<div style="font-size:12px; color:#666;">受信した申請はありません</div>';
-        
         const reqBadge = document.getElementById('requestNotificationBadge');
-        if (reqBadge) {
-          if (pendingCount > 0) {
-            reqBadge.style.display = 'inline-block';
-            reqBadge.textContent = pendingCount > 99 ? '99+' : pendingCount;
-          } else {
-            reqBadge.style.display = 'none';
-          }
-        }
+        if (reqBadge) { if (pendingCount > 0) { reqBadge.style.display = 'inline-block'; reqBadge.textContent = pendingCount > 99 ? '99+' : pendingCount; } else { reqBadge.style.display = 'none'; } }
       });
     }
 
     function listenForAcceptedRequests() {
       const q = query(collection(db, "friend_requests"), where("senderId", "==", myId));
       onSnapshot(q, (snapshot) => {
-        const sentArea = document.getElementById('sentRequestsArea');
-        if(sentArea) sentArea.innerHTML = '';
+        const sentArea = document.getElementById('sentRequestsArea'); if(sentArea) sentArea.innerHTML = '';
         let pendingCount = 0;
-
         snapshot.docChanges().forEach(async (change) => {
           if (change.type === "modified" || change.type === "added") {
             const req = change.doc.data(); const reqId = change.doc.id;
             if(req.status === "accepted") {
-              let f = getSafeData('chatApp_Friends', []);
-              if(!f.includes(req.receiverId)) f.push(req.receiverId);
-              localStorage.setItem('chatApp_Friends', JSON.stringify(f));
+              let f = getSafeData('chatApp_Friends', []); if(!f.includes(req.receiverId)) f.push(req.receiverId); localStorage.setItem('chatApp_Friends', JSON.stringify(f));
               alert(`友達リクエストが承認されました！`); await deleteDoc(doc(db, "friend_requests", reqId));
             }
           }
         });
-
         snapshot.forEach(docSnap => {
           const req = docSnap.data();
           if(req.status === "pending") {
             pendingCount++;
             if(sentArea) {
-              const d = document.createElement('div');
-              d.className = 'friend-item';
-              d.innerHTML = `
-                <div class="friend-info">
-                  <div class="chat-icon">👤</div>
-                  <div class="friend-id" style="font-size: 14px;">ID: ${req.receiverId}<br><span style="font-size:11px;color:#888;font-weight:normal;">承認待ち...</span></div>
-                </div>
-                <button class="delete-btn" style="background:#e74c3c;">取消</button>
-              `;
-              d.querySelector('.delete-btn').onclick = async () => {
-                 if(confirm('申請を取り消しますか？')) {
-                   await deleteDoc(doc(db, "friend_requests", docSnap.id));
-                 }
-              };
+              const d = document.createElement('div'); d.className = 'friend-item';
+              d.innerHTML = `<div class="friend-info"><div class="chat-icon">👤</div><div class="friend-id" style="font-size: 14px;">ID: ${req.receiverId}<br><span style="font-size:11px;color:#888;font-weight:normal;">承認待ち...</span></div></div><button class="delete-btn" style="background:#e74c3c;">取消</button>`;
+              d.querySelector('.delete-btn').onclick = async () => { if(confirm('申請を取り消しますか？')) { await deleteDoc(doc(db, "friend_requests", docSnap.id)); } };
               sentArea.appendChild(d);
             }
           }
@@ -740,61 +595,22 @@
     function listenForNotifications() {
       if(notificationUnsubscribe) notificationUnsubscribe();
       const q = query(collection(db, "users", myId, "notifications"), orderBy("createdAt", "desc"));
-      
       notificationUnsubscribe = onSnapshot(q, (snapshot) => {
-        let unreadCount = 0;
-        const listArea = document.getElementById('notificationListArea');
-        listArea.innerHTML = '';
-        
-        if (snapshot.empty) {
-          listArea.innerHTML = '<div style="color:#666; margin-top:20px; text-align:center;">新着メッセージはありません</div>';
-        }
-
+        let unreadCount = 0; const listArea = document.getElementById('notificationListArea'); listArea.innerHTML = '';
+        if (snapshot.empty) { listArea.innerHTML = '<div style="color:#666; margin-top:20px; text-align:center;">新着メッセージはありません</div>'; }
         snapshot.forEach((docSnap) => {
-          const data = docSnap.data();
-          if(!data.read) unreadCount++;
-          
-          const item = document.createElement('div');
-          item.className = `friend-item ${data.read ? '' : 'unread'}`;
-          
-          const dateObj = new Date(data.createdAt);
-          const timeString = `${dateObj.getMonth()+1}/${dateObj.getDate()} ${dateObj.getHours().toString().padStart(2,'0')}:${dateObj.getMinutes().toString().padStart(2,'0')}`;
-
-          item.innerHTML = `
-            <div style="flex:1;">
-              <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                <span style="font-size: 14px; font-weight: bold; color:#2c3e50;">${data.senderName}</span>
-                <span style="font-size: 11px; color: #888;">${timeString}</span>
-              </div>
-              <div style="font-size: 13px; color: #555; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 90%;">
-                ${data.text || '📷 画像が送信されました'}
-              </div>
-            </div>
-            ${!data.read ? '<span class="unread-dot">🔴</span>' : ''}
-          `;
-
+          const data = docSnap.data(); if(!data.read) unreadCount++;
+          const item = document.createElement('div'); item.className = `friend-item ${data.read ? '' : 'unread'}`;
+          const dateObj = new Date(data.createdAt); const timeString = `${dateObj.getMonth()+1}/${dateObj.getDate()} ${dateObj.getHours().toString().padStart(2,'0')}:${dateObj.getMinutes().toString().padStart(2,'0')}`;
+          item.innerHTML = `<div style="flex:1;"><div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span style="font-size: 14px; font-weight: bold; color:#2c3e50;">${data.senderName}</span><span style="font-size: 11px; color: #888;">${timeString}</span></div><div style="font-size: 13px; color: #555; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 90%;">${data.text || '📷 画像が送信されました'}</div></div>${!data.read ? '<span class="unread-dot">🔴</span>' : ''}`;
           item.onclick = async () => {
-            if(!data.read) {
-              item.classList.remove('unread');
-              const dot = item.querySelector('.unread-dot');
-              if(dot) dot.remove();
-              try { await updateDoc(doc(db, "users", myId, "notifications", docSnap.id), { read: true }); } catch(e) {}
-            }
-            if(data.type === 'message') {
-               startPrivateChat(data.senderId);
-            }
+            if(!data.read) { item.classList.remove('unread'); const dot = item.querySelector('.unread-dot'); if(dot) dot.remove(); try { await updateDoc(doc(db, "users", myId, "notifications", docSnap.id), { read: true }); } catch(e) {} }
+            if(data.type === 'message') { startPrivateChat(data.senderId); }
           };
-          
           listArea.appendChild(item);
         });
-        
         const badge = document.getElementById('homeNotificationBadge');
-        if(unreadCount > 0) {
-          badge.style.display = 'inline-block';
-          badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
-        } else {
-          badge.style.display = 'none';
-        }
+        if(unreadCount > 0) { badge.style.display = 'inline-block'; badge.textContent = unreadCount > 99 ? '99+' : unreadCount; } else { badge.style.display = 'none'; }
       });
     }
 
@@ -804,57 +620,49 @@
     window.onload = () => {
       const params = new URLSearchParams(window.location.search);
       const friendIdFromUrl = params.get('friend'); const roomFromUrl = params.get('room'); 
-
-      const sName = localStorage.getItem('chatApp_MyName'), sId = localStorage.getItem('chatApp_MyId'), 
-            sIcon = localStorage.getItem('chatApp_MyIcon'), sStatus = localStorage.getItem('chatApp_MyStatus');
+      const sName = localStorage.getItem('chatApp_MyName'), sId = localStorage.getItem('chatApp_MyId'), sIcon = localStorage.getItem('chatApp_MyIcon'), sStatus = localStorage.getItem('chatApp_MyStatus');
       
       if (sName && sId) {
         myName = sName; myId = sId; myIconData = sIcon || '👤'; myStatus = sStatus || '';
-        document.getElementById('displayMyName').textContent = myName; document.getElementById('displayMyId').textContent = myId;
-        document.getElementById('displayMyStatus').textContent = myStatus;
-        setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
+        document.getElementById('displayMyName').textContent = myName; document.getElementById('displayMyId').textContent = myId; document.getElementById('displayMyStatus').textContent = myStatus; setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
         saveProfileToDB(); showScreen('home');
-        
         listenForIncomingCalls(); listenForFriendRequests(); listenForAcceptedRequests(); listenForNotifications();
-
-        if (friendIdFromUrl) processUrlFriend(friendIdFromUrl);
-        if (roomFromUrl) processUrlRoom(roomFromUrl);
+        if (friendIdFromUrl) processUrlFriend(friendIdFromUrl); if (roomFromUrl) processUrlRoom(roomFromUrl);
       } else {
-        if (friendIdFromUrl) window.pendingFriendId = friendIdFromUrl;
-        if (roomFromUrl) window.pendingRoomId = roomFromUrl;
+        if (friendIdFromUrl) window.pendingFriendId = friendIdFromUrl; if (roomFromUrl) window.pendingRoomId = roomFromUrl;
       }
     };
 
-    /* ＝＝＝ ソーシャルログイン処理（共通） ＝＝＝ */
+    /* ＝＝＝ ソーシャルログイン処理（超詳細エラーログ付き） ＝＝＝ */
     async function handleSocialLogin(providerKey) {
       try {
         const provider = providers[providerKey];
-        if (!provider) return alert('このプロバイダは設定されていません');
+        if (!provider) {
+          alert('このプロバイダの準備がまだ出来ていません。'); return;
+        }
+
+        // 強制的にアカウント選択画面を出す（Google等の場合）
+        if(typeof provider.setCustomParameters === 'function') {
+            provider.setCustomParameters({ prompt: 'select_account' });
+        }
         
+        // ログインポップアップの実行
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
         
-        // アカウント情報で上書き
+        // アカウント情報をアプリに適用
         myName = user.displayName || `${providerKey}ユーザー`;
-        myId = user.uid; // 一意のID
+        myId = user.uid;
         myIconData = user.photoURL || '👤';
-        myStatus = `${providerKey}アカウントでログイン中`;
+        myStatus = `${providerKey}でログイン中`;
         
         localStorage.setItem('chatApp_MyName', myName); 
         localStorage.setItem('chatApp_MyId', myId); 
         localStorage.setItem('chatApp_MyIcon', myIconData); 
         localStorage.setItem('chatApp_MyStatus', myStatus);
         
-        document.getElementById('displayMyName').textContent = myName; 
-        document.getElementById('displayMyId').textContent = myId; 
-        document.getElementById('displayMyStatus').textContent = myStatus;
-        setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
-
-        // 設定画面用も更新
-        document.getElementById('settingsNameInput').value = myName; 
-        document.getElementById('settingsStatusInput').value = myStatus;
-        tempIconData = myIconData; 
-        setIconDisplay(document.getElementById('settingsIconPreview'), tempIconData);
+        document.getElementById('displayMyName').textContent = myName; document.getElementById('displayMyId').textContent = myId; document.getElementById('displayMyStatus').textContent = myStatus; setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
+        document.getElementById('settingsNameInput').value = myName; document.getElementById('settingsStatusInput').value = myStatus; tempIconData = myIconData; setIconDisplay(document.getElementById('settingsIconPreview'), tempIconData);
         
         await saveProfileToDB(); 
         showScreen('home'); 
@@ -865,12 +673,23 @@
 
         if (window.pendingFriendId) { processUrlFriend(window.pendingFriendId); window.pendingFriendId = null; }
         if (window.pendingRoomId) { processUrlRoom(window.pendingRoomId); window.pendingRoomId = null; }
-        
         if (screens.settings.classList.contains('active')) alert('連携しました！');
 
       } catch (error) {
-        console.error(`${providerKey} ログインエラー:`, error);
-        alert('ログインに失敗しました。プロバイダがFirebaseコンソールで有効化されているか確認してください。\nエラー: ' + error.message);
+        // 🔥エラー原因を画面上に必ず表示する（原因解決のヒント）
+        console.error(`${providerKey} ログインエラー詳細:`, error);
+        
+        let errorMsg = `【ログインエラー】\nコード: ${error.code}\nメッセージ: ${error.message}`;
+        
+        if(error.code === 'auth/unauthorized-domain') {
+            errorMsg += '\n\n💡 解決方法: Firebaseコンソールの「Authentication」→「設定」→「承認済みドメイン」に、現在のURLを追加してください。';
+        } else if (error.code === 'auth/operation-not-allowed') {
+            errorMsg += `\n\n💡 解決方法: Firebaseコンソールの「Authentication」→「Sign-in method」で、「${providerKey}」を【有効】にしてください。`;
+        } else if (error.code === 'auth/popup-closed-by-user') {
+            errorMsg += '\n\n💡 ログインのポップアップが途中で閉じられました。やり直してください。';
+        }
+        
+        alert(errorMsg);
       }
     }
 
@@ -882,75 +701,28 @@
       });
     });
 
-
-    /* ＝＝＝ 設定・その他 ＝＝＝ */
-    document.getElementById('openSettingsBtn').addEventListener('click', () => {
-      document.getElementById('settingsNameInput').value = myName; document.getElementById('settingsStatusInput').value = myStatus;
-      tempIconData = myIconData; setIconDisplay(document.getElementById('settingsIconPreview'), tempIconData); showScreen('settings');
-    });
+    /* --- 設定・その他 --- */
+    document.getElementById('openSettingsBtn').addEventListener('click', () => { document.getElementById('settingsNameInput').value = myName; document.getElementById('settingsStatusInput').value = myStatus; tempIconData = myIconData; setIconDisplay(document.getElementById('settingsIconPreview'), tempIconData); showScreen('settings'); });
     document.getElementById('backFromSettingsBtn').addEventListener('click', () => showScreen('home'));
     document.getElementById('settingsIconPreview').addEventListener('click', () => document.getElementById('settingsIconUpload').click());
-    document.getElementById('settingsIconUpload').addEventListener('change', (e) => {
-      processImage(e.target.files[0], (dataUrl) => { tempIconData = dataUrl; setIconDisplay(document.getElementById('settingsIconPreview'), tempIconData); });
-    });
+    document.getElementById('settingsIconUpload').addEventListener('change', (e) => { processImage(e.target.files[0], (dataUrl) => { tempIconData = dataUrl; setIconDisplay(document.getElementById('settingsIconPreview'), tempIconData); }); });
     document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
-      const n = document.getElementById('settingsNameInput').value.trim(); const s = document.getElementById('settingsStatusInput').value.trim();
-      if (!n) return alert('表示名を入力してください');
-      myName = n; myStatus = s; myIconData = tempIconData;
-      localStorage.setItem('chatApp_MyName', myName); localStorage.setItem('chatApp_MyStatus', myStatus); localStorage.setItem('chatApp_MyIcon', myIconData);
-      document.getElementById('displayMyName').textContent = myName; document.getElementById('displayMyStatus').textContent = myStatus;
-      setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
-      await saveProfileToDB(); alert('設定を保存しました！'); showScreen('home');
+      const n = document.getElementById('settingsNameInput').value.trim(); const s = document.getElementById('settingsStatusInput').value.trim(); if (!n) return alert('表示名を入力してください');
+      myName = n; myStatus = s; myIconData = tempIconData; localStorage.setItem('chatApp_MyName', myName); localStorage.setItem('chatApp_MyStatus', myStatus); localStorage.setItem('chatApp_MyIcon', myIconData); document.getElementById('displayMyName').textContent = myName; document.getElementById('displayMyStatus').textContent = myStatus; setIconDisplay(document.getElementById('homeMyIcon'), myIconData); await saveProfileToDB(); alert('設定を保存しました！'); showScreen('home');
     });
 
-    document.getElementById('logoutBtn').addEventListener('click', async () => { 
-      if (confirm('ログアウトしますか？')) { 
-        try { await signOut(auth); } catch(e) {}
-        localStorage.clear(); location.reload(); 
-      } 
-    });
-
-    document.getElementById('showQrBtn').addEventListener('click', () => {
-      const shareUrl = window.location.origin + window.location.pathname + '?friend=' + encodeURIComponent(myId);
-      document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(shareUrl)}`;
-      document.getElementById('qrModalTitle').textContent = '📱 友達追加QRコード';
-      document.getElementById('qrModalDesc').textContent = '相手のカメラで読み取ってもらうと、友達リクエストが送れます。';
-      document.getElementById('qrModal').style.display = 'flex';
-    });
-    
-    document.getElementById('shareRoomBtn').addEventListener('click', () => {
-      let shareUrl = window.location.origin + window.location.pathname;
-      if (chatMode === 'private') {
-        shareUrl += '?friend=' + encodeURIComponent(myId);
-        document.getElementById('qrModalTitle').textContent = '📱 友達追加QRコード';
-        document.getElementById('qrModalDesc').textContent = '相手に読み取ってもらうと、友達リクエストが届きます。';
-      } else {
-        shareUrl += '?room=' + encodeURIComponent(currentRoomId);
-        document.getElementById('qrModalTitle').textContent = '🚪 ルーム共有QRコード';
-        document.getElementById('qrModalDesc').innerHTML = `リンクを共有するか、QRを読み取ると参加できます。<br><br><input type="text" value="${shareUrl}" style="width:100%; padding:5px; font-size:12px;" onclick="this.select();" readonly>`;
-      }
-      document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(shareUrl)}`;
-      document.getElementById('qrModal').style.display = 'flex';
-    });
-
+    document.getElementById('logoutBtn').addEventListener('click', async () => { if (confirm('ログアウトしますか？')) { try { await signOut(auth); } catch(e) {} localStorage.clear(); location.reload(); } });
+    document.getElementById('showQrBtn').addEventListener('click', () => { const shareUrl = window.location.origin + window.location.pathname + '?friend=' + encodeURIComponent(myId); document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(shareUrl)}`; document.getElementById('qrModalTitle').textContent = '📱 友達追加QRコード'; document.getElementById('qrModalDesc').textContent = '相手のカメラで読み取ってもらうと、友達リクエストが送れます。'; document.getElementById('qrModal').style.display = 'flex'; });
+    document.getElementById('shareRoomBtn').addEventListener('click', () => { let shareUrl = window.location.origin + window.location.pathname; if (chatMode === 'private') { shareUrl += '?friend=' + encodeURIComponent(myId); document.getElementById('qrModalTitle').textContent = '📱 友達追加QRコード'; document.getElementById('qrModalDesc').textContent = '相手に読み取ってもらうと、友達リクエストが届きます。'; } else { shareUrl += '?room=' + encodeURIComponent(currentRoomId); document.getElementById('qrModalTitle').textContent = '🚪 ルーム共有QRコード'; document.getElementById('qrModalDesc').innerHTML = `リンクを共有するか、QRを読み取ると参加できます。<br><br><input type="text" value="${shareUrl}" style="width:100%; padding:5px; font-size:12px;" onclick="this.select();" readonly>`; } document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(shareUrl)}`; document.getElementById('qrModal').style.display = 'flex'; });
     document.getElementById('closeQrBtn').addEventListener('click', () => { document.getElementById('qrModal').style.display = 'none'; });
     document.getElementById('iconPreview').addEventListener('click', () => document.getElementById('myIconUpload').click());
     document.getElementById('myIconUpload').addEventListener('change', (e) => { processImage(e.target.files[0], (dataUrl) => { myIconData = dataUrl; setIconDisplay(document.getElementById('iconPreview'), myIconData); }); });
 
     document.getElementById('loginBtn').addEventListener('click', async () => {
-      const n = document.getElementById('myNameInput').value.trim(); const id = document.getElementById('myIdInput').value.trim(); const s = document.getElementById('myStatusInput').value.trim();
-      if (!n || !id) return alert('入力してください');
-      myName = n; myId = id; myStatus = s;
-      localStorage.setItem('chatApp_MyName', myName); localStorage.setItem('chatApp_MyId', myId); 
-      localStorage.setItem('chatApp_MyIcon', myIconData); localStorage.setItem('chatApp_MyStatus', myStatus);
-      document.getElementById('displayMyName').textContent = myName; document.getElementById('displayMyId').textContent = myId; document.getElementById('displayMyStatus').textContent = myStatus;
-      setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
-      
-      await saveProfileToDB(); showScreen('home'); 
-      listenForIncomingCalls(); listenForFriendRequests(); listenForAcceptedRequests(); listenForNotifications();
-
-      if (window.pendingFriendId) { processUrlFriend(window.pendingFriendId); window.pendingFriendId = null; }
-      if (window.pendingRoomId) { processUrlRoom(window.pendingRoomId); window.pendingRoomId = null; }
+      const n = document.getElementById('myNameInput').value.trim(); const id = document.getElementById('myIdInput').value.trim(); const s = document.getElementById('myStatusInput').value.trim(); if (!n || !id) return alert('入力してください');
+      myName = n; myId = id; myStatus = s; localStorage.setItem('chatApp_MyName', myName); localStorage.setItem('chatApp_MyId', myId); localStorage.setItem('chatApp_MyIcon', myIconData); localStorage.setItem('chatApp_MyStatus', myStatus); document.getElementById('displayMyName').textContent = myName; document.getElementById('displayMyId').textContent = myId; document.getElementById('displayMyStatus').textContent = myStatus; setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
+      await saveProfileToDB(); showScreen('home'); listenForIncomingCalls(); listenForFriendRequests(); listenForAcceptedRequests(); listenForNotifications();
+      if (window.pendingFriendId) { processUrlFriend(window.pendingFriendId); window.pendingFriendId = null; } if (window.pendingRoomId) { processUrlRoom(window.pendingRoomId); window.pendingRoomId = null; }
     });
 
     document.getElementById('addFriendBtn').addEventListener('click', () => { const id = document.getElementById('friendIdInput').value.trim(); if(id) processUrlFriend(id); });
@@ -958,240 +730,50 @@
     document.getElementById('globalChatBtn').addEventListener('click', () => { processUrlRoom('global_room'); });
     document.getElementById('randomRoomBtn').addEventListener('click', () => { const randomRoomId = Math.floor(100000 + Math.random() * 900000).toString(); processUrlRoom(randomRoomId); });
 
-    function startPrivateChat(friendId) {
-      currentFriendId = friendId; chatMode = 'private'; currentRoomId = [myId, friendId].sort().join('_');
-      showScreen('chat'); document.getElementById('onlineMembersList').style.display = 'none';
-      document.getElementById('chatTitle').textContent = friendId;
-      document.getElementById('startCallBtn').style.display = 'block'; document.getElementById('startGlobalCallBtn').style.display = 'none';
-      subscribeToChatRoom(currentRoomId); setOnlineStatus(currentRoomId); subscribeOnlineCount(currentRoomId);
-    }
+    function startPrivateChat(friendId) { currentFriendId = friendId; chatMode = 'private'; currentRoomId = [myId, friendId].sort().join('_'); showScreen('chat'); document.getElementById('onlineMembersList').style.display = 'none'; document.getElementById('chatTitle').textContent = friendId; document.getElementById('startCallBtn').style.display = 'block'; document.getElementById('startGlobalCallBtn').style.display = 'none'; subscribeToChatRoom(currentRoomId); setOnlineStatus(currentRoomId); subscribeOnlineCount(currentRoomId); }
 
     function subscribeToChatRoom(roomId) {
-      if (chatUnsubscribe) chatUnsubscribe();
-      document.getElementById('msgArea').innerHTML = '';
-      const q = query(collection(db, "rooms", roomId, "messages"), orderBy("createdAt"));
-      chatUnsubscribe = onSnapshot(q, (snapshot) => {
-        snapshot.docChanges().forEach((change) => {
-          if (change.type === "added") {
-            const data = change.doc.data();
-            renderMessage(data.text, data.senderId === myId, data.senderName, data.senderIcon, data.createdAt, data.imageUrl, data.senderId, change.doc.id);
-          }
-          if (change.type === "removed") {
-            const el = document.getElementById(`msg-${change.doc.id}`);
-            if (el) el.remove();
-          }
-        });
-      }, (error) => { console.error("チャット読み込みエラー:", error); });
+      if (chatUnsubscribe) chatUnsubscribe(); document.getElementById('msgArea').innerHTML = ''; const q = query(collection(db, "rooms", roomId, "messages"), orderBy("createdAt"));
+      chatUnsubscribe = onSnapshot(q, (snapshot) => { snapshot.docChanges().forEach((change) => { if (change.type === "added") { const data = change.doc.data(); renderMessage(data.text, data.senderId === myId, data.senderName, data.senderIcon, data.createdAt, data.imageUrl, data.senderId, change.doc.id); } if (change.type === "removed") { const el = document.getElementById(`msg-${change.doc.id}`); if (el) el.remove(); } }); }, (error) => { console.error("チャット読み込みエラー:", error); });
     }
 
     function renderMessage(text, isMine, senderName, senderIcon, createdAt, imageUrl, senderId, messageId) {
-      const msgArea = document.getElementById('msgArea');
-      const div = document.createElement('div'); div.className = `msg-row ${isMine ? 'mine' : 'other'}`;
-      div.id = `msg-${messageId}`;
-
+      const msgArea = document.getElementById('msgArea'); const div = document.createElement('div'); div.className = `msg-row ${isMine ? 'mine' : 'other'}`; div.id = `msg-${messageId}`;
       const iconDiv = document.createElement('div'); iconDiv.className = 'chat-icon'; setIconDisplay(iconDiv, senderIcon);
-      
-      if (!isMine && senderId) {
-        iconDiv.style.cursor = 'pointer';
-        iconDiv.title = 'プロフィールを見る';
-        iconDiv.onclick = () => { processUrlFriend(senderId); };
-      }
-
+      if (!isMine && senderId) { iconDiv.style.cursor = 'pointer'; iconDiv.title = 'プロフィールを見る'; iconDiv.onclick = () => { processUrlFriend(senderId); }; }
       const wrapper = document.createElement('div'); wrapper.className = `msg-wrapper ${isMine ? 'mine' : 'other'}`;
       if (!isMine) { const nameDiv = document.createElement('div'); nameDiv.className = 'sender-name'; nameDiv.textContent = senderName; wrapper.appendChild(nameDiv); }
       const msgDiv = document.createElement('div'); msgDiv.className = `msg ${isMine ? 'my-msg' : 'bot-msg'}`; 
-      
       let textSpan = null;
-      if (text) {
-        textSpan = document.createElement('span');
-        const escapedText = text.replace(/[&<>"']/g, function(m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]; });
-        textSpan.innerHTML = escapedText.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
-        msgDiv.appendChild(textSpan);
-      }
+      if (text) { textSpan = document.createElement('span'); const escapedText = text.replace(/[&<>"']/g, function(m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]; }); textSpan.innerHTML = escapedText.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'); msgDiv.appendChild(textSpan); }
       if (imageUrl) { const img = document.createElement('img'); img.src = imageUrl; img.className = 'chat-image'; msgDiv.appendChild(img); }
-      if (createdAt) {
-        const dateObj = new Date(createdAt);
-        const timeDiv = document.createElement('div'); timeDiv.className = 'msg-time'; timeDiv.textContent = `${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`; msgDiv.appendChild(timeDiv);
-      }
-      
+      if (createdAt) { const dateObj = new Date(createdAt); const timeDiv = document.createElement('div'); timeDiv.className = 'msg-time'; timeDiv.textContent = `${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`; msgDiv.appendChild(timeDiv); }
       wrapper.appendChild(msgDiv); 
-
-      const actionDiv = document.createElement('div');
-      actionDiv.style.display = 'flex';
-      actionDiv.style.gap = '12px';
-      actionDiv.style.marginTop = '4px';
-      actionDiv.style.fontSize = '12px';
-      actionDiv.style.color = '#888';
-      actionDiv.style.justifyContent = isMine ? 'flex-end' : 'flex-start';
-      actionDiv.style.padding = '0 5px';
-
-      if (text) {
-          const copyBtn = document.createElement('span');
-          copyBtn.textContent = '📋 コピー';
-          copyBtn.style.cursor = 'pointer';
-          copyBtn.onclick = () => { navigator.clipboard.writeText(text).then(() => alert('コピーしました')).catch(()=>alert('コピーに失敗しました')); };
-          actionDiv.appendChild(copyBtn);
-      }
-      if (isMine) {
-          const delBtn = document.createElement('span');
-          delBtn.textContent = '🗑️ 削除';
-          delBtn.style.cursor = 'pointer';
-          delBtn.style.color = '#e74c3c';
-          delBtn.onclick = async () => {
-              if(confirm('メッセージを削除しますか？')) {
-                  await deleteDoc(doc(db, "rooms", currentRoomId, "messages", messageId));
-              }
-          };
-          actionDiv.appendChild(delBtn);
-      }
-
+      const actionDiv = document.createElement('div'); actionDiv.style.display = 'flex'; actionDiv.style.gap = '12px'; actionDiv.style.marginTop = '4px'; actionDiv.style.fontSize = '12px'; actionDiv.style.color = '#888'; actionDiv.style.justifyContent = isMine ? 'flex-end' : 'flex-start'; actionDiv.style.padding = '0 5px';
+      if (text) { const copyBtn = document.createElement('span'); copyBtn.textContent = '📋 コピー'; copyBtn.style.cursor = 'pointer'; copyBtn.onclick = () => { navigator.clipboard.writeText(text).then(() => alert('コピーしました')).catch(()=>alert('コピーに失敗しました')); }; actionDiv.appendChild(copyBtn); }
+      if (isMine) { const delBtn = document.createElement('span'); delBtn.textContent = '🗑️ 削除'; delBtn.style.cursor = 'pointer'; delBtn.style.color = '#e74c3c'; delBtn.onclick = async () => { if(confirm('メッセージを削除しますか？')) { await deleteDoc(doc(db, "rooms", currentRoomId, "messages", messageId)); } }; actionDiv.appendChild(delBtn); }
       if (actionDiv.children.length > 0) wrapper.appendChild(actionDiv);
-
-      div.appendChild(iconDiv); div.appendChild(wrapper); msgArea.appendChild(div); 
-      msgArea.scrollTop = msgArea.scrollHeight;
+      div.appendChild(iconDiv); div.appendChild(wrapper); msgArea.appendChild(div); msgArea.scrollTop = msgArea.scrollHeight;
     }
 
-    document.getElementById('toggleSearchBtn').addEventListener('click', () => {
-      const searchArea = document.getElementById('chatSearchArea');
-      if(searchArea.style.display === 'none') {
-          searchArea.style.display = 'block';
-          document.getElementById('chatSearchInput').focus();
-      } else {
-          searchArea.style.display = 'none';
-          document.getElementById('chatSearchInput').value = '';
-          filterMessages('');
-      }
-    });
-
-    document.getElementById('chatSearchInput').addEventListener('input', (e) => {
-      filterMessages(e.target.value.toLowerCase());
-    });
-
-    function filterMessages(keyword) {
-      const msgs = document.querySelectorAll('.msg-row');
-      msgs.forEach(row => {
-        const textSpan = row.querySelector('.msg span'); 
-        if(textSpan) {
-           const text = textSpan.textContent.toLowerCase();
-           row.style.display = text.includes(keyword) ? 'flex' : 'none';
-        } else {
-           row.style.display = keyword ? 'none' : 'flex';
-        }
-      });
-    }
-
+    document.getElementById('toggleSearchBtn').addEventListener('click', () => { const searchArea = document.getElementById('chatSearchArea'); if(searchArea.style.display === 'none') { searchArea.style.display = 'block'; document.getElementById('chatSearchInput').focus(); } else { searchArea.style.display = 'none'; document.getElementById('chatSearchInput').value = ''; filterMessages(''); } });
+    document.getElementById('chatSearchInput').addEventListener('input', (e) => { filterMessages(e.target.value.toLowerCase()); });
+    function filterMessages(keyword) { const msgs = document.querySelectorAll('.msg-row'); msgs.forEach(row => { const textSpan = row.querySelector('.msg span'); if(textSpan) { const text = textSpan.textContent.toLowerCase(); row.style.display = text.includes(keyword) ? 'flex' : 'none'; } else { row.style.display = keyword ? 'none' : 'flex'; } }); }
     document.getElementById('imageSendBtn').addEventListener('click', () => { document.getElementById('chatImageInput').click(); });
-    document.getElementById('chatImageInput').addEventListener('change', (e) => {
-      const file = e.target.files[0]; if (!file) return;
-      if (file.size > 800 * 1024) { alert("画像は800KB以下にしてください"); e.target.value = ''; return; }
-      const reader = new FileReader();
-      reader.onload = async function(event) {
-        const imageUrl = event.target.result;
-        try {
-          await addDoc(collection(db, "rooms", currentRoomId, "messages"), { text: "", imageUrl: imageUrl, senderId: myId, senderName: myName, senderIcon: myIconData, createdAt: Date.now() });
-          if(chatMode === 'private') {
-            const friendId = currentRoomId.replace(myId, '').replace('_', '');
-            await addDoc(collection(db, "users", friendId, "notifications"), { type: 'message', senderId: myId, senderName: myName, text: '📷 画像が送信されました', roomId: currentRoomId, createdAt: Date.now(), read: false });
-          }
-        } catch (error) {}
-      };
-      reader.readAsDataURL(file); e.target.value = ''; 
-    });
-
-    document.getElementById('sendBtn').addEventListener('click', async () => {
-      const text = document.getElementById('chatTextInput').value.trim();
-      if (!text) return; document.getElementById('chatTextInput').value = '';
-      try {
-        await addDoc(collection(db, "rooms", currentRoomId, "messages"), { text: text, senderId: myId, senderName: myName, senderIcon: myIconData, createdAt: Date.now() });
-        if(chatMode === 'private') {
-          const friendId = currentRoomId.replace(myId, '').replace('_', '');
-          await addDoc(collection(db, "users", friendId, "notifications"), { type: 'message', senderId: myId, senderName: myName, text: text, roomId: currentRoomId, createdAt: Date.now(), read: false });
-        }
-      } catch (e) {}
-    });
-
+    document.getElementById('chatImageInput').addEventListener('change', (e) => { const file = e.target.files[0]; if (!file) return; if (file.size > 800 * 1024) { alert("画像は800KB以下にしてください"); e.target.value = ''; return; } const reader = new FileReader(); reader.onload = async function(event) { const imageUrl = event.target.result; try { await addDoc(collection(db, "rooms", currentRoomId, "messages"), { text: "", imageUrl: imageUrl, senderId: myId, senderName: myName, senderIcon: myIconData, createdAt: Date.now() }); if(chatMode === 'private') { const friendId = currentRoomId.replace(myId, '').replace('_', ''); await addDoc(collection(db, "users", friendId, "notifications"), { type: 'message', senderId: myId, senderName: myName, text: '📷 画像が送信されました', roomId: currentRoomId, createdAt: Date.now(), read: false }); } } catch (error) {} }; reader.readAsDataURL(file); e.target.value = ''; });
+    document.getElementById('sendBtn').addEventListener('click', async () => { const text = document.getElementById('chatTextInput').value.trim(); if (!text) return; document.getElementById('chatTextInput').value = ''; try { await addDoc(collection(db, "rooms", currentRoomId, "messages"), { text: text, senderId: myId, senderName: myName, senderIcon: myIconData, createdAt: Date.now() }); if(chatMode === 'private') { const friendId = currentRoomId.replace(myId, '').replace('_', ''); await addDoc(collection(db, "users", friendId, "notifications"), { type: 'message', senderId: myId, senderName: myName, text: text, roomId: currentRoomId, createdAt: Date.now(), read: false }); } } catch (e) {} });
     document.getElementById('chatTextInput').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) document.getElementById('sendBtn').click(); });
     document.getElementById('backBtn').addEventListener('click', () => { removeOnlineStatus(); if(onlineUnsubscribe) onlineUnsubscribe(); showScreen('home'); });
-    
-    document.getElementById('openFriendsBtn').addEventListener('click', async () => {
-      showScreen('friends'); const area = document.getElementById('friendsListArea'); area.innerHTML = '読み込み中...';
-      const friends = getSafeData('chatApp_Friends', []); area.innerHTML = '';
-      if(friends.length === 0) { area.innerHTML = '<div style="color:#666; margin-top:20px;">友達がいません</div>'; return; }
-      for (const f of friends) {
-        let fName = f; let fIcon = '👤';
-        try { const userDoc = await getDoc(doc(db, "users", f)); if(userDoc.exists()) { fName = userDoc.data().name; fIcon = userDoc.data().icon; } } catch(e) {}
-        const d = document.createElement('div'); d.className = 'friend-item';
-        const bgStyle = fIcon.startsWith('data:') || fIcon.startsWith('http') ? `background-image:url(${fIcon});` : '';
-        const txt = fIcon.startsWith('data:') || fIcon.startsWith('http') ? '' : fIcon;
-        d.innerHTML = `
-          <div class="friend-info">
-            <div class="chat-icon" style="${bgStyle}">${txt}</div>
-            <div class="friend-id">${fName}<br><span style="font-size:11px;color:#888;font-weight:normal;">ID: ${f}</span></div>
-          </div>
-          <button class="delete-btn">削除</button>
-        `;
-        d.querySelector('.delete-btn').addEventListener('click', (e) => { e.stopPropagation(); if(confirm(`${fName}さんを削除しますか？`)) { let currentFriends = getSafeData('chatApp_Friends', []); currentFriends = currentFriends.filter(id => id !== f); localStorage.setItem('chatApp_Friends', JSON.stringify(currentFriends)); d.remove(); if(currentFriends.length === 0) area.innerHTML = '友達がいません'; } });
-        d.onclick = () => startPrivateChat(f); area.appendChild(d);
-      }
-    });
-    
-    document.getElementById('backFromFriendsBtn').addEventListener('click', () => showScreen('home'));
-    document.getElementById('openRequestsBtn').addEventListener('click', () => showScreen('requests'));
-    document.getElementById('backFromRequestsBtn').addEventListener('click', () => showScreen('home'));
+    document.getElementById('openFriendsBtn').addEventListener('click', async () => { showScreen('friends'); const area = document.getElementById('friendsListArea'); area.innerHTML = '読み込み中...'; const friends = getSafeData('chatApp_Friends', []); area.innerHTML = ''; if(friends.length === 0) { area.innerHTML = '<div style="color:#666; margin-top:20px;">友達がいません</div>'; return; } for (const f of friends) { let fName = f; let fIcon = '👤'; try { const userDoc = await getDoc(doc(db, "users", f)); if(userDoc.exists()) { fName = userDoc.data().name; fIcon = userDoc.data().icon; } } catch(e) {} const d = document.createElement('div'); d.className = 'friend-item'; const bgStyle = fIcon.startsWith('data:') || fIcon.startsWith('http') ? `background-image:url(${fIcon});` : ''; const txt = fIcon.startsWith('data:') || fIcon.startsWith('http') ? '' : fIcon; d.innerHTML = `<div class="friend-info"><div class="chat-icon" style="${bgStyle}">${txt}</div><div class="friend-id">${fName}<br><span style="font-size:11px;color:#888;font-weight:normal;">ID: ${f}</span></div></div><button class="delete-btn">削除</button>`; d.querySelector('.delete-btn').addEventListener('click', (e) => { e.stopPropagation(); if(confirm(`${fName}さんを削除しますか？`)) { let currentFriends = getSafeData('chatApp_Friends', []); currentFriends = currentFriends.filter(id => id !== f); localStorage.setItem('chatApp_Friends', JSON.stringify(currentFriends)); d.remove(); if(currentFriends.length === 0) area.innerHTML = '友達がいません'; } }); d.onclick = () => startPrivateChat(f); area.appendChild(d); } });
+    document.getElementById('backFromFriendsBtn').addEventListener('click', () => showScreen('home')); document.getElementById('openRequestsBtn').addEventListener('click', () => showScreen('requests')); document.getElementById('backFromRequestsBtn').addEventListener('click', () => showScreen('home'));
 
-    /* ＝＝＝ 通話関連 ＝＝＝ */
-    document.getElementById('startGlobalCallBtn').addEventListener('click', () => {
-      showScreen('globalCall');
-      const domain = 'meet.jit.si';
-      const jitsiRoom = chatMode === 'global' ? 'Sabopennet_Global_Room' : `Sabopennet_Room_${currentRoomId}`;
-      const options = { roomName: jitsiRoom, parentNode: document.querySelector('#jitsiContainer'), userInfo: { displayName: myName }, configOverwrite: { startWithAudioMuted: true, startWithVideoMuted: true } };
-      jitsiApi = new JitsiMeetExternalAPI(domain, options);
-    });
-
+    /* --- ビデオ通話 --- */
+    document.getElementById('startGlobalCallBtn').addEventListener('click', () => { showScreen('globalCall'); const domain = 'meet.jit.si'; const jitsiRoom = chatMode === 'global' ? 'Sabopennet_Global_Room' : `Sabopennet_Room_${currentRoomId}`; const options = { roomName: jitsiRoom, parentNode: document.querySelector('#jitsiContainer'), userInfo: { displayName: myName }, configOverwrite: { startWithAudioMuted: true, startWithVideoMuted: true } }; jitsiApi = new JitsiMeetExternalAPI(domain, options); });
     document.getElementById('endGlobalCallBtn').addEventListener('click', () => { if (jitsiApi) { jitsiApi.dispose(); jitsiApi = null; } showScreen('chat'); });
-
-    async function openUserMedia() {
-      try { localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true }); document.getElementById('localVideo').srcObject = localStream; document.getElementById('localVideoBox').classList.remove('sharing'); } catch (error) { alert('カメラ・マイクの権限を許可してください'); throw error; }
-    }
-
-    function listenForIncomingCalls() {
-      if (incomingCallUnsubscribe) return;
-      const myCallRef = doc(db, "calls", myId);
-      incomingCallUnsubscribe = onSnapshot(myCallRef, (docSnap) => {
-        const data = docSnap.data();
-        if (data && data.offer && !data.answer) {
-          document.getElementById('incomingCallerName').textContent = data.callerName; document.getElementById('incomingCallAlert').style.display = 'flex';
-          document.getElementById('answerCallBtn').onclick = () => { document.getElementById('incomingCallAlert').style.display = 'none'; currentFriendId = data.callerId; currentRoomId = [myId, data.callerId].sort().join('_'); answerCall(myCallRef, data.offer); };
-          document.getElementById('rejectCallBtn').onclick = () => { document.getElementById('incomingCallAlert').style.display = 'none'; deleteDoc(myCallRef); };
-        } else if (!data) { document.getElementById('incomingCallAlert').style.display = 'none'; if(screens.call.classList.contains('active')) hangUp(); }
-      });
-    }
-
-    document.getElementById('startCallBtn').addEventListener('click', async () => {
-      showScreen('call'); document.getElementById('inCallNameDisplay').textContent = currentFriendId; document.getElementById('remoteVideoLabel').textContent = currentFriendId; document.getElementById('callStatusText').textContent = '発信中...';
-      await openUserMedia();
-      peerConnection = new RTCPeerConnection(configuration); localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-      peerConnection.ontrack = event => { remoteStream = event.streams[0]; document.getElementById('remoteVideo').srcObject = remoteStream; };
-      const callDocRef = doc(db, "calls", currentFriendId);
-      peerConnection.onicecandidate = event => { if (event.candidate) addDoc(collection(callDocRef, "callerCandidates"), event.candidate.toJSON()); };
-      const offer = await peerConnection.createOffer(); await peerConnection.setLocalDescription(offer);
-      await setDoc(callDocRef, { offer: { type: offer.type, sdp: offer.sdp }, callerId: myId, callerName: myName });
-      onSnapshot(callDocRef, (snapshot) => { const data = snapshot.data(); if (!peerConnection.currentRemoteDescription && data?.answer) { peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer)); document.getElementById('callStatusText').textContent = '通話中'; } });
-      onSnapshot(collection(callDocRef, "calleeCandidates"), (snapshot) => { snapshot.docChanges().forEach((change) => { if (change.type === "added") peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data())); }); });
-    });
-
-    async function answerCall(callDocRef, offerData) {
-      showScreen('call'); document.getElementById('inCallNameDisplay').textContent = currentFriendId; document.getElementById('remoteVideoLabel').textContent = currentFriendId; document.getElementById('callStatusText').textContent = '接続中...';
-      await openUserMedia();
-      peerConnection = new RTCPeerConnection(configuration); localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-      peerConnection.ontrack = event => { remoteStream = event.streams[0]; document.getElementById('remoteVideo').srcObject = remoteStream; };
-      peerConnection.onicecandidate = event => { if (event.candidate) addDoc(collection(callDocRef, "calleeCandidates"), event.candidate.toJSON()); };
-      await peerConnection.setRemoteDescription(new RTCSessionDescription(offerData));
-      const answer = await peerConnection.createAnswer(); await peerConnection.setLocalDescription(answer);
-      await updateDoc(callDocRef, { answer: { type: answer.type, sdp: answer.sdp } }); document.getElementById('callStatusText').textContent = '通話中';
-      onSnapshot(collection(callDocRef, "callerCandidates"), (snapshot) => { snapshot.docChanges().forEach((change) => { if (change.type === "added") peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data())); }); });
-    }
-
+    async function openUserMedia() { try { localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true }); document.getElementById('localVideo').srcObject = localStream; document.getElementById('localVideoBox').classList.remove('sharing'); } catch (error) { alert('カメラ・マイクの権限を許可してください'); throw error; } }
+    function listenForIncomingCalls() { if (incomingCallUnsubscribe) return; const myCallRef = doc(db, "calls", myId); incomingCallUnsubscribe = onSnapshot(myCallRef, (docSnap) => { const data = docSnap.data(); if (data && data.offer && !data.answer) { document.getElementById('incomingCallerName').textContent = data.callerName; document.getElementById('incomingCallAlert').style.display = 'flex'; document.getElementById('answerCallBtn').onclick = () => { document.getElementById('incomingCallAlert').style.display = 'none'; currentFriendId = data.callerId; currentRoomId = [myId, data.callerId].sort().join('_'); answerCall(myCallRef, data.offer); }; document.getElementById('rejectCallBtn').onclick = () => { document.getElementById('incomingCallAlert').style.display = 'none'; deleteDoc(myCallRef); }; } else if (!data) { document.getElementById('incomingCallAlert').style.display = 'none'; if(screens.call.classList.contains('active')) hangUp(); } }); }
+    document.getElementById('startCallBtn').addEventListener('click', async () => { showScreen('call'); document.getElementById('inCallNameDisplay').textContent = currentFriendId; document.getElementById('remoteVideoLabel').textContent = currentFriendId; document.getElementById('callStatusText').textContent = '発信中...'; await openUserMedia(); peerConnection = new RTCPeerConnection(configuration); localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream)); peerConnection.ontrack = event => { remoteStream = event.streams[0]; document.getElementById('remoteVideo').srcObject = remoteStream; }; const callDocRef = doc(db, "calls", currentFriendId); peerConnection.onicecandidate = event => { if (event.candidate) addDoc(collection(callDocRef, "callerCandidates"), event.candidate.toJSON()); }; const offer = await peerConnection.createOffer(); await peerConnection.setLocalDescription(offer); await setDoc(callDocRef, { offer: { type: offer.type, sdp: offer.sdp }, callerId: myId, callerName: myName }); onSnapshot(callDocRef, (snapshot) => { const data = snapshot.data(); if (!peerConnection.currentRemoteDescription && data?.answer) { peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer)); document.getElementById('callStatusText').textContent = '通話中'; } }); onSnapshot(collection(callDocRef, "calleeCandidates"), (snapshot) => { snapshot.docChanges().forEach((change) => { if (change.type === "added") peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data())); }); }); });
+    async function answerCall(callDocRef, offerData) { showScreen('call'); document.getElementById('inCallNameDisplay').textContent = currentFriendId; document.getElementById('remoteVideoLabel').textContent = currentFriendId; document.getElementById('callStatusText').textContent = '接続中...'; await openUserMedia(); peerConnection = new RTCPeerConnection(configuration); localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream)); peerConnection.ontrack = event => { remoteStream = event.streams[0]; document.getElementById('remoteVideo').srcObject = remoteStream; }; peerConnection.onicecandidate = event => { if (event.candidate) addDoc(collection(callDocRef, "calleeCandidates"), event.candidate.toJSON()); }; await peerConnection.setRemoteDescription(new RTCSessionDescription(offerData)); const answer = await peerConnection.createAnswer(); await peerConnection.setLocalDescription(answer); await updateDoc(callDocRef, { answer: { type: answer.type, sdp: answer.sdp } }); document.getElementById('callStatusText').textContent = '通話中'; onSnapshot(collection(callDocRef, "callerCandidates"), (snapshot) => { snapshot.docChanges().forEach((change) => { if (change.type === "added") peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data())); }); }); }
     document.getElementById('toggleMicBtn').addEventListener('click', function() { if(!localStream) return; const t = localStream.getAudioTracks()[0]; t.enabled = !t.enabled; this.classList.toggle('off'); this.textContent = t.enabled ? '🎤' : '🔇'; });
     document.getElementById('toggleCamBtn').addEventListener('click', function() { if(!localStream) return; const t = localStream.getVideoTracks()[0]; t.enabled = !t.enabled; this.classList.toggle('off'); });
     document.getElementById('shareScreenBtn').addEventListener('click', async function() { if (!isScreenSharing) { try { screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true }); const screenTrack = screenStream.getVideoTracks()[0]; const sender = peerConnection.getSenders().find(s => s.track.kind === 'video'); if (sender) sender.replaceTrack(screenTrack); document.getElementById('localVideo').srcObject = screenStream; document.getElementById('localVideoBox').classList.add('sharing'); isScreenSharing = true; this.style.backgroundColor = '#2ecc71'; screenTrack.onended = () => stopScreenSharing(); } catch (e) {} } else { stopScreenSharing(); } });
