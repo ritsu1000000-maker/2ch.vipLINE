@@ -230,11 +230,6 @@
     import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, setDoc, getDoc, updateDoc, deleteDoc, where } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 
-    /* ==============================================================
-       ★重要：もし自分で新しく作ったFirebaseプロジェクトがある場合は、
-       ここの「firebaseConfig」を自分のものに書き換えてください！
-       書き換えないと「auth/configuration-not-found」が出続けます。
-       ============================================================== */
     const firebaseConfig = {
       apiKey: "AIzaSyBCQArL0Q1wDveRywCpet5Nor3PuRYt7fM",
       authDomain: "sabopennet.firebaseapp.com",
@@ -323,13 +318,57 @@
     document.getElementById('googleLoginBtn').addEventListener('click', () => handleGoogleLogin(false));
     document.getElementById('settingsGoogleLoginBtn').addEventListener('click', () => handleGoogleLogin(true));
 
-    /* --- 手動ログイン処理（設定不要ですぐ使える） --- */
+    /* --- 手動ログイン・新規登録処理 --- */
     document.getElementById('loginBtn').addEventListener('click', async () => {
       document.getElementById('loginErrorArea').style.display = 'none';
-      const n = document.getElementById('myNameInput').value.trim(); const id = document.getElementById('myIdInput').value.trim(); const s = document.getElementById('myStatusInput').value.trim(); if (!n || !id) return alert('表示名とIDを入力してください');
-      myName = n; myId = id; myStatus = s; localStorage.setItem('chatApp_MyName', myName); localStorage.setItem('chatApp_MyId', myId); localStorage.setItem('chatApp_MyIcon', myIconData); localStorage.setItem('chatApp_MyStatus', myStatus); document.getElementById('displayMyName').textContent = myName; document.getElementById('displayMyId').textContent = myId; document.getElementById('displayMyStatus').textContent = myStatus; setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
-      await saveProfileToDB(); showScreen('home'); listenForIncomingCalls(); listenForFriendRequests(); listenForAcceptedRequests(); listenForNotifications();
-      if (window.pendingFriendId) { processUrlFriend(window.pendingFriendId); window.pendingFriendId = null; } if (window.pendingRoomId) { processUrlRoom(window.pendingRoomId); window.pendingRoomId = null; }
+      const n = document.getElementById('myNameInput').value.trim(); 
+      const id = document.getElementById('myIdInput').value.trim(); 
+      const s = document.getElementById('myStatusInput').value.trim(); 
+      
+      if (!n || !id) return alert('表示名とIDを入力してください');
+      
+      try {
+        const userDoc = await getDoc(doc(db, "users", id));
+        
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          myName = n;
+          myId = data.id;
+          if (myIconData === '👤') {
+            myIconData = data.icon || '👤';
+          }
+          myStatus = s || data.status || '';
+          alert('既存のアカウントでログインしました！');
+        } else {
+          myName = n; 
+          myId = id; 
+          myStatus = s;
+        }
+
+        localStorage.setItem('chatApp_MyName', myName); 
+        localStorage.setItem('chatApp_MyId', myId); 
+        localStorage.setItem('chatApp_MyIcon', myIconData); 
+        localStorage.setItem('chatApp_MyStatus', myStatus); 
+        
+        document.getElementById('displayMyName').textContent = myName; 
+        document.getElementById('displayMyId').textContent = myId; 
+        document.getElementById('displayMyStatus').textContent = myStatus; 
+        setIconDisplay(document.getElementById('homeMyIcon'), myIconData);
+        
+        await saveProfileToDB(); 
+        showScreen('home'); 
+        listenForIncomingCalls(); 
+        listenForFriendRequests(); 
+        listenForAcceptedRequests(); 
+        listenForNotifications();
+        
+        if (window.pendingFriendId) { processUrlFriend(window.pendingFriendId); window.pendingFriendId = null; } 
+        if (window.pendingRoomId) { processUrlRoom(window.pendingRoomId); window.pendingRoomId = null; }
+        
+      } catch (error) {
+        console.error("ログインエラー:", error);
+        alert('ログイン処理中にエラーが発生しました。');
+      }
     });
 
     /* --- オンライン・チャット・通話等の既存機能 --- */
