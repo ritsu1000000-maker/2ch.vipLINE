@@ -96,10 +96,34 @@ select.text-input { appearance: auto; }
 .connect-user-meta { font-size: 11px; color: #888; margin-top: 2px; }
 .connect-add-btn { background: #27ae60; color: white; border: none; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
 .connect-add-btn:disabled { background: #bdc3c7; cursor: default; }
+
+/* ===== ニコニコ風コメント機能 ===== */
+#nicoContainer {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; /* クリック操作の邪魔をしないようにする */
+  z-index: 9999;
+  overflow: hidden;
+}
+.nico-comment {
+  position: absolute;
+  white-space: nowrap;
+  font-size: 24px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000;
+  left: 100%; /* 初期位置は画面の右外 */
+}
+@keyframes nicoFlow {
+  0% { left: 100%; transform: translateX(0); }
+  100% { left: 0; transform: translateX(-100%); }
+}
 </style>
 </head>
 <body>
 <div class="app-container" id="appContainer">
+<div id="nicoContainer"></div>
+
 <div id="notification" class="notification"></div>
 
 <div id="incomingCallAlert" class="incoming-call-alert">
@@ -125,7 +149,6 @@ select.text-input { appearance: auto; }
   <button id="closeQrBtn" class="inc-btn btn-reject" style="width: 100%;">閉じる</button>
 </div>
 
-<!-- ログイン画面 -->
 <div id="loginScreen" class="screen active">
   <div class="header">
     <div id="weatherLogin" class="weather-widget">☁️ --℃</div>
@@ -149,7 +172,6 @@ select.text-input { appearance: auto; }
   </div>
 </div>
 
-<!-- ホーム画面 -->
 <div id="homeScreen" class="screen">
   <div class="header">
     <div id="weatherHome" class="weather-widget">☁️ --℃</div>
@@ -202,7 +224,6 @@ select.text-input { appearance: auto; }
   </div>
 </div>
 
-<!-- 通知画面 -->
 <div id="notificationScreen" class="screen">
   <div class="header" style="background-color: #e67e22;">
     <button id="backFromNotificationsBtn" class="back-btn">◀ 戻る</button>
@@ -212,7 +233,6 @@ select.text-input { appearance: auto; }
   <div class="content-area" id="notificationListArea" style="gap: 8px; justify-content: flex-start; align-items: stretch;"></div>
 </div>
 
-<!-- 設定画面 -->
 <div id="settingsScreen" class="screen">
   <div class="header" style="background-color: #7f8c8d;">
     <button id="backFromSettingsBtn" class="back-btn">◀ 戻る</button>
@@ -276,7 +296,6 @@ select.text-input { appearance: auto; }
   </div>
 </div>
 
-<!-- ユーザープロフィール画面 -->
 <div id="userProfileScreen" class="screen">
   <div class="header">
     <button id="backFromUserProfileBtn" class="back-btn">◀ 戻る</button>
@@ -295,7 +314,6 @@ select.text-input { appearance: auto; }
   </div>
 </div>
 
-<!-- 友達リスト画面 -->
 <div id="friendsScreen" class="screen">
   <div class="header" style="background-color: #34495e;">
     <button id="backFromFriendsBtn" class="back-btn">◀ 戻る</button>
@@ -305,7 +323,6 @@ select.text-input { appearance: auto; }
   <div class="content-area" id="friendsListArea" style="align-items: stretch;"></div>
 </div>
 
-<!-- 申請リスト画面 -->
 <div id="requestsScreen" class="screen">
   <div class="header" style="background-color: #e67e22;">
     <button id="backFromRequestsBtn" class="back-btn">◀ 戻る</button>
@@ -324,7 +341,6 @@ select.text-input { appearance: auto; }
   </div>
 </div>
 
-<!-- つながる画面 -->
 <div id="connectScreen" class="screen">
   <div class="header" style="background-color: #8e44ad;">
     <button id="backFromConnectBtn" class="back-btn">◀ 戻る</button>
@@ -375,7 +391,6 @@ select.text-input { appearance: auto; }
   </div>
 </div>
 
-<!-- チャット画面 -->
 <div id="chatScreen" class="screen">
   <div class="header">
     <button id="backBtn" class="back-btn">◀ 戻る</button>
@@ -384,6 +399,7 @@ select.text-input { appearance: auto; }
       <span id="onlineCountDisplay">🟢 --人</span>
     </div>
     <div style="display: flex; align-items: center;">
+      <button id="toggleNicoBtn" class="header-icon-btn" title="ニコニコモード" style="opacity: 0.5;">📺</button>
       <button id="toggleSearchBtn" class="header-icon-btn" title="検索">🔍</button>
       <button id="shareRoomBtn" class="header-icon-btn" title="共有URLを表示">🔗</button>
       <button id="startCallBtn" class="header-icon-btn" title="通話">📹</button>
@@ -403,7 +419,6 @@ select.text-input { appearance: auto; }
   </div>
 </div>
 
-<!-- 通話画面 -->
 <div id="inCallScreen" class="screen call-theme">
   <div class="header" style="background: transparent;">
     <span style="visibility: hidden;">◀</span>
@@ -431,7 +446,6 @@ select.text-input { appearance: auto; }
   </div>
 </div>
 
-<!-- 全体通話画面 -->
 <div id="globalCallScreen" class="screen call-theme">
   <div id="jitsiContainer"></div>
   <div style="padding: 10px; background: #2c3e50; text-align: center; flex-shrink: 0;">
@@ -439,9 +453,7 @@ select.text-input { appearance: auto; }
   </div>
 </div>
 
-</div><!-- app-container -->
-
-<script type="module">
+</div><script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, where } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
@@ -537,6 +549,37 @@ function setSelectedTags(containerId, tags) {
 }
 initHobbyTags('connectHobbyTags');
 initHobbyTags('settingsHobbyTags');
+
+// ===== ニコニコ風コメント機能 =====
+let nicoMode = false;
+
+document.getElementById('toggleNicoBtn').addEventListener('click', function() {
+  nicoMode = !nicoMode;
+  this.style.opacity = nicoMode ? '1' : '0.5';
+});
+
+function flowNicoComment(text) {
+  if (!text) return;
+  const container = document.getElementById('nicoContainer');
+  if (!container) return;
+  const span = document.createElement('span');
+  span.className = 'nico-comment';
+  span.textContent = text;
+  
+  // 高さをランダムに (画面の上から10%〜80%の位置)
+  span.style.top = Math.floor(Math.random() * 70 + 10) + '%';
+  
+  // 5〜8秒かけて流れるようにする
+  const duration = 5 + Math.random() * 3; 
+  span.style.animation = `nicoFlow ${duration}s linear forwards`;
+  
+  container.appendChild(span);
+  
+  // アニメーションが終わったら要素を削除してメモリを節約
+  setTimeout(() => {
+    if (span.parentNode) span.parentNode.removeChild(span);
+  }, duration * 1000);
+}
 
 // ===== Googleログイン =====
 async function handleGoogleLogin(isSettingScreen = false) {
@@ -672,7 +715,7 @@ async function processUrlFriend(fId) {
     // 都道府県・趣味を表示
     const prefHobbiesDiv = document.getElementById('targetUserPrefHobbies');
     let phHtml = '';
-    if (data.pref) phHtml += `📍 ${data.pref}　`;
+    if (data.pref) phHtml += `📍 ${data.pref} `;
     if (data.hobbies && data.hobbies.length > 0) phHtml += data.hobbies.map(t => `<span style="background:#f0e6ff;color:#8e44ad;border-radius:10px;padding:2px 7px;font-size:11px;margin:2px;">${t}</span>`).join('');
     prefHobbiesDiv.innerHTML = phHtml;
     const btn = document.getElementById('sendRequestBtn');
@@ -969,6 +1012,13 @@ function renderMessage(text, isMine, senderName, senderIcon, createdAt, imageUrl
   if (isMine) { const delBtn = document.createElement('span'); delBtn.textContent = '🗑️ 削除'; delBtn.style.cursor = 'pointer'; delBtn.style.color = '#e74c3c'; delBtn.onclick = async () => { if (confirm('メッセージを削除しますか？')) { await deleteDoc(doc(db, "rooms", currentRoomId, "messages", messageId)); } }; actionDiv.appendChild(delBtn); }
   if (actionDiv.children.length > 0) wrapper.appendChild(actionDiv);
   div.appendChild(iconDiv); div.appendChild(wrapper); msgArea.appendChild(div); msgArea.scrollTop = msgArea.scrollHeight;
+
+  // ニコニコ風コメント表示
+  if (nicoMode && text) {
+    if (Date.now() - createdAt < 10000) {
+      flowNicoComment(text);
+    }
+  }
 }
 
 document.getElementById('toggleSearchBtn').addEventListener('click', () => {
@@ -1076,7 +1126,7 @@ document.getElementById('connectSearchBtn').addEventListener('click', async () =
           <div class="chat-icon" style="${iconStyle}">${iconText}</div>
           <div class="connect-user-detail">
             <div class="connect-user-name">${user.name || '名無し'}</div>
-            <div class="connect-user-meta">${user.pref ? '📍 ' + user.pref : ''}${user.status ? '　' + user.status : ''}</div>
+            <div class="connect-user-meta">${user.pref ? '📍 ' + user.pref : ''}${user.status ? ' ' + user.status : ''}</div>
             <div style="margin-top:3px;">${tagsHtml}</div>
           </div>
         </div>
