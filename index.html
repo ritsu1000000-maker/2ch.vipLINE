@@ -1153,3 +1153,20 @@ document.getElementById('shareScreenBtn').addEventListener('click', async functi
   if (!isScreenSharing) { try { screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true }); const screenTrack = screenStream.getVideoTracks()[0]; const sender = peerConnection.getSenders().find(s => s.track.kind === 'video'); if (sender) sender.replaceTrack(screenTrack); document.getElementById('localVideo').srcObject = screenStream; document.getElementById('localVideoBox').classList.add('sharing'); isScreenSharing = true; this.style.backgroundColor = '#2ecc71'; screenTrack.onended = () => stopScreenSharing(); } catch (e) {} } else { stopScreenSharing(); }
 });
 function stopScreenSharing() {
+  if (!isScreenSharing) return; const videoTrack = localStream.getVideoTracks()[0]; const sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
+  if (sender) sender.replaceTrack(videoTrack); document.getElementById('localVideo').srcObject = localStream; document.getElementById('localVideoBox').classList.remove('sharing'); if (screenStream) screenStream.getTracks().forEach(t => t.stop()); isScreenSharing = false; document.getElementById('shareScreenBtn').style.backgroundColor = '#8e44ad';
+}
+async function hangUp() {
+  if (peerConnection) { peerConnection.close(); peerConnection = null; }
+  if (localStream) { localStream.getTracks().forEach(track => track.stop()); localStream = null; }
+  if (screenStream) { screenStream.getTracks().forEach(track => track.stop()); screenStream = null; }
+  document.getElementById('localVideo').srcObject = null; document.getElementById('remoteVideo').srcObject = null;
+  if (myId && currentFriendId) { await deleteDoc(doc(db, "calls", currentFriendId)).catch(e=>{}); await deleteDoc(doc(db, "calls", myId)).catch(e=>{}); }
+  showScreen('chat');
+  document.getElementById('toggleMicBtn').classList.remove('off'); document.getElementById('toggleMicBtn').innerHTML = '<span class="css-icon icon-mic"></span>'; document.getElementById('toggleCamBtn').classList.remove('off'); document.getElementById('shareScreenBtn').style.backgroundColor = '#8e44ad'; isScreenSharing = false;
+}
+document.getElementById('endCallBtn').addEventListener('click', hangUp);
+
+</script>
+</body>
+</html>
